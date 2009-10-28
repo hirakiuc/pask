@@ -1,0 +1,60 @@
+PHP Task Management Framework(Pask)
+====================================
+
+Index
+  1. What is this software ?
+  2. Waht is the porpose ?
+  3. License
+  4. Roadmap
+  5. Download
+  6. Source Repository
+
+
+1. What is this ?
+
+This software is the Task Management Framework in php,
+just like the Rake(http://rake.rubyforge.org/) and 
+Pake (built by symfony project team
+(http://www.symfony-project.org/), but Pake was replaced with 'symfony' command.).
+
+
+2. What is the porpose ?
+
+The porpose of the pask is to replace with pake in php. 
+
+
+3. License
+
+see LICENSE file.
+
+
+4. Roadmap
+
+This software will has these feature, may be....
+(Number means the implementation priority.)
+
+ (1). Paskfiles are completely defined in pure php class
+   which extend the Pask Class.
+    A paskfile can define one task.
+
+ (2). Task dependency can define in each paskfiles.
+    Pask Class can define the before and after tasks.
+
+ (3). TaskHelper 
+    To write more easy paskfile in php.
+
+ (4). Namespace in tasks.
+    this feature may implement as the directory structure
+   which has paskfiles.
+
+
+5. Download
+
+Not Released yet.
+
+
+6. Source Repository
+
+git://github.com/hirakiuc/pask.git
+
+

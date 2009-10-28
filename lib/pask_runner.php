@@ -1,13 +1,33 @@
 <?php 
 
-class Util{
-  public static function to_camelCasedName($str){
-    // TODO imple
-    return $str;
+require_once('pask_loader.php');
+
+/**
+ *
+ */
+class PaskRunner{
+
+  /** */
+  private $task_loader = null;
+
+  /**
+   *
+   */
+  public function __construct($loader){ 
+    $this->loader = $loader;
   }
 
-  public static function to_under_scored_name($str){
-    return $str;
+  /**
+   *
+   */
+  public function run_task($task_name){ 
+    $stack = $loader->create_taskstack($task_name); 
+
+    while(count($stack)!=0){
+      $task_data = array_pop($stack);
+
+      $task_data['pask']->run();
+    } 
   }
 }
 
