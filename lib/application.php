@@ -1,5 +1,7 @@
 <?php
 
+require_once('Console/CommandLine.php');
+
 /**
  * The Class for Simple use for Command Line Interface
  *
@@ -44,6 +46,10 @@ class Application{
    */
   public function run(){
     // opt parser ??
+    $parser = new Console_CommandLine(array(
+      'description' => 'Task Management Framework on PHP',
+      'version'     => '0.0.1' 
+    ));
 
     // if -d specified, overwrite $this->conf['paskdir']
   }
