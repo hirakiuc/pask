@@ -3,16 +3,15 @@
 require_once("errors.php");
 require_once("pask.php");
 
-
 /**
- *
+ * Paskfile Loader Class
  */
-class TaskLoader{
+class PaskLoader{
 
-  /** */
+  /** regular expression for paskfile extention */
   private $task_ext_regexp = "*\.task\.php$";
 
-  /** */
+  /** target directory to search some paskfiles. */
   private $root_dir_path = null;
 
   /** 
@@ -40,7 +39,7 @@ class TaskLoader{
   private $task_stack = array();
 
   /**
-   *
+   * Constractor
    */
   public function __construct($path){
     // check path is not null or zero length string.
@@ -108,6 +107,9 @@ class TaskLoader{
 
   //--------------------------------------------
   // pask stack
+  /**
+   *
+   */
   public function create_taskstack($task_name){
 
     $task_data = $this->load_paskfile($task_name);
@@ -124,7 +126,7 @@ class TaskLoader{
 
   /**
    *
-   */
+   */ 
   private function resolve_dependency($before_tasks){ 
     foreach($before_tasks as $task){
       $task_data = $this->load_paskfile($task_name);
@@ -179,6 +181,37 @@ class TaskLoader{
     );
   }
 
+  //--------------------------------------------
+  /**
+   * get task and desc array.
+   */
+  public function get_tasks_desc(){
+    // [ { 'task_name' => $taskname, 'desc' => $desc'}, ....] 
+    $defined_tasks = array(); 
+
+    foreach($this->paskfile_map as $task){ 
+      try{
+        $task_data = $this->load_paskfile($fpath); 
+
+        array_push($defined_tasks, array( 
+          'name' => $task_data['task_name'],
+          'desc' => $task_data['pask']->desc
+        ));
+        
+      }catch(Exception $err){
+        throw $err;
+      } 
+    }
+    return $defined_tasks;
+  }
+
+  //--------------------------------------------
+  /**
+   *
+   */
+  public function get_paskfile_map(){
+    return $this->paskfile_map;
+  }
 
   //--------------------------------------------
   // Util functions
@@ -217,9 +250,7 @@ class TaskLoader{
     array_pop($this->task_stack);
   }
 
-}
-
-
+} 
 
 ?>
 
