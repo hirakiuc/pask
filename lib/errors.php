@@ -22,4 +22,3 @@ class TaskNotFoundError extends Exception{}
 class InvalidTaskClassError extends Exception{}
 
 ?> 
-
