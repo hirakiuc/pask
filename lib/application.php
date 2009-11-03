@@ -17,13 +17,8 @@ class Application{
  * -h : show help.
  */
 
-  /** default arguments array */
-  public $conf = array(
-    'paskdir' => './tasks' ,  // default paskfile directory path
-    'debug'   => FALSE     ,  // -v option
-    'help'    => FALSE     ,  // -h option
-    'list'    => FALSE        // -t option
-  );
+  /** config value array */
+  public $conf = null;
 
   /** PaskRunner instance */
   private $runner = null;
@@ -34,11 +29,7 @@ class Application{
   /**
    *
    */
-  public function __construct($args){ 
-    // MEMO something to do ?
-    $this->loader = new PaskLoader($this->conf['paskdir']); 
-    
-    $this->runner = new PaskRunner($loader, $this->conf); 
+  public function __construct(){ 
   }
 
   /**
@@ -46,12 +37,82 @@ class Application{
    */
   public function run(){
     // opt parser ??
+    $parser = $this->create_optparser();
+
+    try{
+      $this->conf = $parser->parse();
+    }catch(Exception $err){
+      $parser->displayError($err->getMessage());
+      exit(-1);
+    }
+
+//    $this->loader = new PaskLoader($this->conf['paskdir']); 
+//    $this->runner = new PaskRunner($loader, $this->conf); 
+
+  }
+
+  /**
+   *
+   */
+  private function create_optparser(){
     $parser = new Console_CommandLine(array(
       'description' => 'Task Management Framework on PHP',
       'version'     => '0.0.1' 
     ));
 
-    // if -d specified, overwrite $this->conf['paskdir']
+    $parser->addOption('paskdir', array(
+      'short_name' => '-d',
+      'long_name'  => '--paskdir',
+      'description'=> 'specify paskfile directory.',
+      'help_name'  => 'PASKDIR',
+      'action'     => 'StoreString',
+      'default'    => '../tasks'
+    )); 
+
+    $parser->addOption('verbose', array(
+      'short_name' => '-v',
+      'long_name'  => '--verbose',
+      'description'=> 'verbose mode.',
+      'help_name'  => 'VERBOSE',
+      'action'     => 'StoreTrue',
+      'default'    => FALSE
+    ));
+
+    $parser->addOption('quiet', array(
+      'short_name' => '-q',
+      'long_name'  => '--quiet',
+      'description'=> 'quiet mode.',
+      'help_name'  => 'QUIET',
+      'action'     => 'StoreTrue',
+      'default'    => FALSE
+    )); 
+
+    $parser->addOption('list', array(
+      'short_name' => '-l',
+      'long_name'  => '--list',
+      'description'=> 'show defined task list.',
+      'help_name'  => 'LIST',
+      'action'     => 'StoreTrue',
+      'default'    => FALSE
+    ));
+
+    $parser->addOption('help', array(
+      'short_name' => '-h',
+      'long_name'  => '--help',
+      'description'=> 'show help.',
+      'help_name'  => 'HELP',
+      'action'     => 'StoreTrue',
+      'default'    => FALSE
+    ));
+
+    $parser->addArgument('taskname', array(
+      'description' => 'taskname want to do.',
+      'multiple'    => FALSE,
+      'optional'    => FALSE,
+      'help_name'   => 'taskName'
+    ));
+
+    return $parser;
   }
 
 
