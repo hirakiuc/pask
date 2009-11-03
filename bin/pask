@@ -1,5 +1,4 @@
-#!/usr/bin/env php
-
+#!/usr/bin/env php 
 <?php
 
 // FIXME temporary code(getcwd)
@@ -8,5 +7,4 @@ require_once(getcwd()."/../lib/include.php");
 $app = new Application();
 $app->run();
 
-?>
-
+?> 
