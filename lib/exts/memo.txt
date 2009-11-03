@@ -1,0 +1,13 @@
+create in this directory for each extention libraries.
+I think these library in paskfile for more creating tasks easier.
+
+ - depend on pear packages
+   - phpdoc
+   - php codesniffer
+   - ....
+ - independent utils 
+   - filesystem
+   - shell
+   - ssh
+   - ....
+
