@@ -14,7 +14,7 @@ class Application{
  * -d : user defined paskfile directory path.
  * -t : show defined tasks in paskfiles.
  * -v : vorbose mode.
- * -h : show help.
+ * -q : quiet mode.
  */
 
   /** config value array */
@@ -46,13 +46,46 @@ class Application{
       exit(-1);
     }
 
-//    $this->loader = new PaskLoader($this->conf['paskdir']); 
-//    $this->runner = new PaskRunner($loader, $this->conf); 
+    $writer = $this->get_writer();
+    //-----------------------------
+    // define level
+    // if -q specified
+    //    quiet mode
+    // else if -v specified 
+    //    verbose mode
+    // else if -x specified
+    //    debug mode ????
+    // else
+    //    normal mode
+    // end
 
+    // create writer
+    // return writer
+    //-----------------------------
+
+    // set writer to loader, runner(constructor)
+
+    //----- create_loader ----
+//    $this->loader = new PaskLoader($this->conf['paskdir']); 
+    //------------------------
+    
+    //----- create_runner ----
+//    $this->runner = new PaskRunner($loader, $this->conf); 
+    //------------------------
+
+    // if -t specified
+    //   show list
+    // else 
+    //   $this->runner->do_tasks();
+    // end
+
+    return 0;
   }
 
   /**
+   * Create Console_CommandLine Parser Object.
    *
+   * @return Console_CommandLine Object
    */
   private function create_optparser(){
     $parser = new Console_CommandLine(array(
@@ -87,20 +120,11 @@ class Application{
       'default'    => FALSE
     )); 
 
-    $parser->addOption('list', array(
-      'short_name' => '-l',
-      'long_name'  => '--list',
+    $parser->addOption('tasks', array(
+      'short_name' => '-t',
+      'long_name'  => '--tasks',
       'description'=> 'show defined task list.',
-      'help_name'  => 'LIST',
-      'action'     => 'StoreTrue',
-      'default'    => FALSE
-    ));
-
-    $parser->addOption('help', array(
-      'short_name' => '-h',
-      'long_name'  => '--help',
-      'description'=> 'show help.',
-      'help_name'  => 'HELP',
+      'help_name'  => 'TASKS',
       'action'     => 'StoreTrue',
       'default'    => FALSE
     ));
@@ -111,6 +135,17 @@ class Application{
       'optional'    => FALSE,
       'help_name'   => 'taskName'
     ));
+
+    //----- for developer mode ----------
+    $parser->addOption('debug', array(
+      'short_name' => '-x',
+      'long_name'  => '--debug',
+      'description'=> 'show debug information.',
+      'help_name'  => 'DEBUG',
+      'action'     => 'StoreTrue',
+      'default'    => FALSE
+    ));
+    //-----------------------------------
 
     return $parser;
   }
@@ -130,7 +165,7 @@ class Application{
   /**
    * show defined tasks.
    */
-  private function show_tasklist(){
+  private function show_tasklist($writer){
     $ary = $loader->get_tasks_desc();
 
     // TODO refine output string...
