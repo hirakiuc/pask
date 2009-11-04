@@ -8,6 +8,9 @@ require_once("pask.php");
  */
 class PaskLoader{
 
+  /** output writer */
+  private $writer = null;
+
   /** regular expression for paskfile extention */
   private $task_ext_regexp = "*\.task\.php$";
 
@@ -20,28 +23,30 @@ class PaskLoader{
    * task_name is a CamelCasedName string 
    * with namespace separated by ':'
    *
-   * [ [task_name => filepath], ... ]
+   * ( (task_name => filepath), ... )
    */
   private $paskfile_map = array();
 
   /** 
    * This array is used by TaskRunner Class as Stack.
    *
-   * [
-   *   [ 
+   * (
+   *   ( 
    *     task_name => $camelCasedName , 
    *     pask      => $obj, 
    *     namespace => $str
-   *   ],
+   *   ),
    *    ....
-   * ] 
+   * ) 
    */
   private $task_stack = array();
 
   /**
    * Constractor
    */
-  public function __construct($path){
+  public function __construct($path, $writer){
+    $this->writer = $writer;
+
     // check path is not null or zero length string.
     if($target_dir == null || mbstrlen($target_dir) == 0){
       throw new ArgumentError();
@@ -81,15 +86,16 @@ class PaskLoader{
 
         }else if($file.is_file()){
           if(mb_ereg_match($this->task_ext_regexp,$fname)){
-            $fpath = $file->getPathname;
+            $fpath = $file->getPathname();;
 
-            array_push($this->paskfile_map, 
+            array_push($this->paskfile_map(), 
               array($this->get_taskname($fpath) => $fpath)
             );
           }
 
+          $writer->debug("Load: " . $file->getPathname());
         }else{
-          // TODO logger.debug("skip: " . $fname);
+          $writer->debug("skip: " . $fname);
         }
       }
     }catch(Exception $err){
@@ -97,18 +103,13 @@ class PaskLoader{
     } 
   }
 
-  /**
-   * create camel cased taskname separated by ':'.
-   */
-  private function get_taskname($file_path){
-    // TODO implement in Util function?
-    return "";
-  }
 
   //--------------------------------------------
   // pask stack
   /**
-   *
+   * Create TaskStack in this instance.
+   *  
+   * @param string $task_name namespaced task_name
    */
   public function create_taskstack($task_name){
 
@@ -125,7 +126,10 @@ class PaskLoader{
   }
 
   /**
+   * Check whether specified task depends on any other tasks.
+   * if such tasks exists, put in task stack.
    *
+   * @param array a array with task_name strings
    */ 
   private function resolve_dependency($before_tasks){ 
     foreach($before_tasks as $task){
@@ -141,7 +145,11 @@ class PaskLoader{
   }
 
   /**
+   * Load a Specified paskfile by namespaced task_name, 
+   * and return a array for task stask.
    *
+   * @task_name string namespaced task_name
+   * @return a array for task stask.
    */
   private function load_paskfile($task_name){
     // resolve paskfile path from task_name.
@@ -150,10 +158,8 @@ class PaskLoader{
       throw new TaskNotFoundError();
     }
 
-    $namespace = $this->get_namespace($task_name);
-
-    // TODO BUG 
-    //   this spec may be override TaskClass 
+    // FIXME issue 2 (namespace problem)
+    //   this spec may be redefine(or error occur?)  TaskClass 
     //   if other same TaskNameClass exist in other namespace.
     //   (should this use php namespace in 5.3 ??) 
     include($fpath);
@@ -183,7 +189,9 @@ class PaskLoader{
 
   //--------------------------------------------
   /**
-   * get task and desc array.
+   * load all defined tasks and create a array.
+   * 
+   * @return array which has all task's name and desc.
    */
   public function get_tasks_desc(){
     // [ { 'task_name' => $taskname, 'desc' => $desc'}, ....] 
@@ -207,7 +215,7 @@ class PaskLoader{
 
   //--------------------------------------------
   /**
-   *
+   * get a array mapped task_name and paskfile path.
    */
   public function get_paskfile_map(){
     return $this->paskfile_map;
@@ -215,8 +223,31 @@ class PaskLoader{
 
   //--------------------------------------------
   // Util functions
+  //
+
   /**
+   * create namespaced task_name from paskfile path.
    *
+   * @param string $file_path paskfile fullpath
+   * @return namespaced taskname string
+   */
+  private function get_taskname($file_path){
+    $task_name = basename($file_path, ".pask.php"); 
+
+    $dir_path = dirname($file_path);
+
+    // TODO delete first root_dir path from file_path
+    // TODO change dir separator with ":" (if "/" or "", namespace is "")
+
+    return $namespace . ":" . $task_name;
+  }
+
+
+  /**
+   * get ClassName from namespaced task_name.
+   *
+   * @param string $task_name namespaced task_name
+   * @return ClassName
    */
   private function get_classname($task_name){
     $splited_taskname = preg_split(':',$task_name); 
@@ -224,7 +255,10 @@ class PaskLoader{
   }
 
   /**
+   * get namespace from namespaced task_name.
    *
+   * @param string $task_name namespaced task_name
+   * @return namespace(separated by ':') or ""(root namespace)
    */
   private function get_namespace($task_name){
     $splited_taskname = preg_split(':',$task_name);
@@ -236,20 +270,23 @@ class PaskLoader{
     }
   }
 
+
+  //--------------------------------------------
   /**
+   * push a specified array object into the task stack.
    *
+   * @param array a array contain the task stack object.
    */
-  private function push_task($array){
-    array_push($this->task_stack, $array);
+  private function push_task($task_data){
+    array_push($this->task_stack, $task_data);
   }
 
   /**
-   *
+   * pop the next task stack object from task stack.
    */
   public function pop_task(){
     array_pop($this->task_stack);
   }
 
 } 
-
 ?> 
