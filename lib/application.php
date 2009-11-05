@@ -1,6 +1,15 @@
 <?php
+/* vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2: */
+
 /**
+ * Application Class File
  *
+ * PHP version 5
+ *
+ * @author hirakiuc <hirakiuc@gmail.com>
+ * @copyright 2009 pask project team
+ * @license http://www.opensource.org/licenses/mit-license.html  MIT License
+ * @version Git:$Id$
  */
 
 require_once('Console/CommandLine.php');
@@ -119,6 +128,15 @@ class Application{
    */ 
   private function check_arguments(){
     // TODO implement (throw Exception if error
+    
+    /* -d : ok(-d,-t,-v,-q,-x,taskname)
+     * -t : not(taskname) ok(-d,-v,-q,-x)
+     * -v : not(-q,-x)    ok(-d,-t)  must(taskname)
+     * -q : not(-v,-x)    ok(-d,-t)  must(taskname)
+     * -x : not(-q,-v)    ok(-d,-t)  must(taskname)
+     */
+
+
 
     $paskdir = realpath($this->conf->options['paskdir']);
     if(!$paskdir){
