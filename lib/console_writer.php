@@ -1,18 +1,24 @@
 <?php
+/**
+ *
+ */
 
 /**
  * Abstract Message Writer Class
  */
 abstract class Writer{
-  //---------------------------------
-  /** level:verbose */
-  public static $VERBOSE = "verbose";
-  /** level:normal */
-  public static $NORMAL  = "normal";
-  /** level:quiet */
-  public static $QUIET   = "quiet"; 
+  //--------------------------------- 
+  //error >> debug > verbose > normal > quiet 
+  /** level:error */
+  private static $ERROR  = 100; 
   /** level:debug (for developer) */
-  public static $DEBUG   = "debug"; 
+  public static $DEBUG   = 4; 
+  /** level:verbose */
+  public static $VERBOSE = 3;
+  /** level:normal */
+  public static $NORMAL  = 2;
+  /** level:quiet */
+  public static $QUIET   = 1; 
   //---------------------------------
 
   /** output level */
@@ -42,41 +48,40 @@ abstract class Writer{
   /**  
    *
    */
-  public function verbose($str){
-    $this->puts($str);
+  public function verbose($str){ 
+    $this->output_msg(Writer::$VERBOSE, $this->format($str));
   }
 
   /**  
    *
    */
   public function debug($str){
-    $this->puts($str);
+    $this->output_msg(Writer::$DEBUG, $this->debug_format($str));
   }
 
   /**  
    *
    */
   public function puts($str){ 
-    switch($this->level){
-      case Writer::$DEBUG:
-        fprintf($this->output, $this->debug_format($str) . "\n");
-        return;
-      case Writer::$VERBOSE:
-      case Writer::$NORMAL:
-        fprintf($this->output, $this->format($str) . "\n");
-        return;
-      case Writer::$QUIET:
-      default: 
-        return;
-    }
+    $this->output_msg(Writer::$NORMAL, $this->format($str));
   }
 
   /**
    *
    */
-  public function error($str){
-    fprintf($this->err_output, $this->error_format($str) . "\n"); 
+  public function error($str){ 
+    $this->output_msg(Writer::$ERROR, $this->error_format($str));
   } 
+
+
+  /**
+   *
+   */
+  private function output_msg($target_level, $msg){
+    if($this->level >= $target_level){
+      fprintf($this->output, $msg . "\n");
+    }
+  }
 
   //----------------------------------------
   /**
@@ -126,6 +131,5 @@ class ConsoleWriter extends Writer{
     } 
     return ConsoleWriter::$instance;
   } 
-}
-
+} 
 ?>
