@@ -35,26 +35,29 @@ class PaskRunner{
    * Do task 
    */
   public function run_task($task_name, $task_args){ 
-    $stack = $loader->create_taskstack($task_name); 
+    // split $task_name to namespace and camelCasedTaskName
+//    $ary = Utils::parse_taskname($task_name);
 
-    ($this->writer)->puts("Run    '" . $task_name . "' task.");
+    $stack = $this->loader->create_taskstack($task_name); 
+
+    $this->writer->puts("Run    '" . $task_name . "' task.");
 
     while(count($stack)!=0){
       try{ 
         $task_data = array_pop($stack); 
 
-        ($this->writer)->verbose("Start '" . $task_data['task_name']);
+        $this->writer->verbose("Start '" . $task_data['task_name']);
 
         $task_data['pask']->run();
 
-        ($this->writer)->verbose("End   '" . $task_data['task_name']);
+        $this->writer->verbose("End   '" . $task_data['task_name']);
 
       }catch(Exception $err){
         throw $err;
       }
     } 
 
-    ($this->writer)->puts("Finish '" . $task_name . "' task.");
+    $this->writer->puts("Finish '" . $task_name . "' task.");
   } 
 } 
 

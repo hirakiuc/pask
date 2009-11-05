@@ -1,5 +1,6 @@
 <?php
 
+require_once('utils.php');
 require_once('console_writer.php');
 require_once('pask.php');
 require_once('errors.php');

@@ -1,5 +1,6 @@
 <?php
 
+require_once("utils.php");
 require_once("errors.php");
 require_once("pask.php");
 
@@ -11,8 +12,8 @@ class PaskLoader{
   /** output writer */
   private $writer = null;
 
-  /** regular expression for paskfile extention */
-  private $task_ext_regexp = "*\.task\.php$";
+  /** regular expression for the paskfile extention */
+  private $task_ext_regexp = ".*\.pask\.php$";
 
   /** target directory to search some paskfiles. */
   private $root_dir_path = null;
@@ -44,58 +45,63 @@ class PaskLoader{
   /**
    * Constractor
    */
-  public function __construct($path, $writer){
+  public function __construct($taskdir_path, $writer){
     $this->writer = $writer;
 
-    // check path is not null or zero length string.
-    if($target_dir == null || mbstrlen($target_dir) == 0){
-      throw new ArgumentError();
+    // check taskdir_path is not null or zero length string.
+    if($taskdir_path == null || mb_strlen($taskdir_path) == 0){
+      throw new ArgumentError("Invalid Argument : Task Directory Path.");
     }
 
-    // check whether path is a dir?
-    if(!file_exists($path)){
-      throw new NotFoundError();
-    }else if(!is_dir($path)){
-      throw new NotDirectoryError();
+    // check whether taskdir_path is a dir?
+    if(!file_exists($taskdir_path)){
+      throw new NotFoundError("Invalid Directory path: " . $taskdir_path);
+    }else if(!is_dir($taskdir_path)){
+      throw new NotDirectoryError("Invalid Directory path: " . $taskdir_path);
     }
 
-    $this->root_dir_path = $path;
+    $this->root_dir_path = $taskdir_path;
 
     try{
-      $root_dir = new DirectoryIterator($path);
+      $root_dir = new DirectoryIterator($taskdir_path);
 
       $this->search_paskfiles($root_dir); 
 
     }catch(Exception $err){
       throw $err;
-    }
-
-    $this->load_tasks($target_dir);
+    } 
   }  
 
   /**
    * Search paskfile in the taskdir recursively.
    */
-  private function search_paskfiles($target_dir){
+  private function search_paskfiles($dir_iterator){
     try{
-      foreach($target_dir as $file){
-        $fname = $file.getFilename();
+      foreach($dir_iterator as $file){
+        $fname = $file->getFilename();
+        $fpath = $file->getPathname();
 
-        if($file.isDir() && !$file.isDot()){
-          $this->search_paskfiles($file);
+        if($file->isDir() || $file->isDot()){
+          /* 
+            $next_dir = new DirectoryIterator($file->getPathname());
+            $this->search_paskfiles($next_dir); 
+           */
+          $this->writer->debug("Dir Skipped : " . $fpath);
 
-        }else if($file.is_file()){
-          if(mb_ereg_match($this->task_ext_regexp,$fname)){
-            $fpath = $file->getPathname();;
+        }else if($file->isFile()){
+          $this->writer->debug("File found.");
+          if(mb_ereg_match($this->task_ext_regexp,$fpath)){
 
-            array_push($this->paskfile_map(), 
-              array($this->get_taskname($fpath) => $fpath)
-            );
+            $taskname = $this->get_taskname($fpath); 
+            $this->paskfile_map[$taskname] = $fpath; 
+
+            $this->writer->debug("File loaded : " . $fpath);
+          }else{
+            $this->writer->debug("File Skipped: " . $fpath);
           }
 
-          $writer->debug("Load: " . $file->getPathname());
         }else{
-          $writer->debug("skip: " . $fname);
+          $this->writer->debug("File Skipped: " . $fpath);
         }
       }
     }catch(Exception $err){
@@ -113,7 +119,8 @@ class PaskLoader{
    */
   public function create_taskstack($task_name){
 
-    $task_data = $this->load_paskfile($task_name);
+    $task_data = $this->load_paskfile($task_name); 
+
     $before_tasks = $task_data['pask']->before_tasks;
 
     if(count($before_tasks) > 0){
@@ -151,30 +158,32 @@ class PaskLoader{
    * @task_name string namespaced task_name
    * @return a array for task stask.
    */
-  private function load_paskfile($task_name){
+  private function load_paskfile($task_name){ 
     // resolve paskfile path from task_name.
     $fpath = $this->paskfile_map[$task_name];
     if($fpath == null){
-      throw new TaskNotFoundError();
+      throw new TaskNotFoundError("target taskfile is not exist: " . $fpath);
     }
 
     // FIXME issue 2 (namespace problem)
     //   this spec may be redefine(or error occur?)  TaskClass 
     //   if other same TaskNameClass exist in other namespace.
     //   (should this use php namespace in 5.3 ??) 
-    include($fpath);
+    include_once($fpath);
 
-    $task_classname = $this->get_classname($task_name);
-    if(!class_define($task_classname)){
-      throw new TaskNotFoundError();
-    }else if(!ReflectionClass::isSubclassOf("Pake")){
-      throw new InvalidTaskClassError();
-    }
-
-    // 1. ReflectionClass::newInstance($task_classname)
     $obj = null;
     try{
+      $task_classname = $this->get_classname($task_name);
+      if(!class_exists($task_classname)){
+        throw new TaskNotFoundError("target task is not defined: " . $task_name);
+      }
+
       $ref = new ReflectionClass($task_classname);
+      if(!$ref->isSubclassOf("Pask")){
+        throw new InvalidTaskClassError(
+          $task_classname . " class is not a SubClass of the Pake Class.");
+      }
+
       $obj = $ref->newInstance(); 
     }catch(Exception $err){
       throw $err;
@@ -232,14 +241,24 @@ class PaskLoader{
    * @return namespaced taskname string
    */
   private function get_taskname($file_path){
-    $task_name = basename($file_path, ".pask.php"); 
+    $paskfile_name = basename($file_path, ".pask.php"); 
 
-    $dir_path = dirname($file_path);
+    // root namespace
+    $namespace = "";
 
-    // TODO delete first root_dir path from file_path
-    // TODO change dir separator with ":" (if "/" or "", namespace is "")
+    // delete paskdir path prefix from path.
+    $path_from_rootdir = substr($fiel_path, mb_strlen($this->root_dir_path));
 
-    return $namespace . ":" . $task_name;
+    if(mb_strlen($path_from_rootdir) != 0){ 
+      // replace directory separator by ':'
+      $namespace = preg_replace("/\//",":",substr($path_from_root_dir,1)); 
+    } 
+
+    if(mb_strlen($namespace) == 0){
+      return $paskfile_name;
+    }else{
+      return $namespace . ":" . $paskfile_name;
+    }
   }
 
 
@@ -249,9 +268,9 @@ class PaskLoader{
    * @param string $task_name namespaced task_name
    * @return ClassName
    */
-  private function get_classname($task_name){
-    $splited_taskname = preg_split(':',$task_name); 
-    return array_pop($splited_taskname);
+  private function get_classname($task_name){ 
+    $ary = Utils::parse_taskname($task_name);
+    return $ary['className'];
   }
 
   /**
@@ -261,15 +280,9 @@ class PaskLoader{
    * @return namespace(separated by ':') or ""(root namespace)
    */
   private function get_namespace($task_name){
-    $splited_taskname = preg_split(':',$task_name);
-    array_pop($splited_taskname);
-    if(count($splited_taskname) == 0){
-      return "";
-    }else{
-      return explode(':',$splited_taskname);
-    }
+    $ary = Utils::parse_taskname($task_name);
+    return $ary['namespace']; 
   }
-
 
   //--------------------------------------------
   /**

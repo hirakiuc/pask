@@ -10,11 +10,17 @@ require_once('Console/CommandLine.php');
  */
 class Application{
 
+  /** application exitcode if succeeded. */
+  private static $SUCCESS = 0;
+  /** application exitcode if error occured. */
+  private static $ERROR   = 1;
+
 /**
  * -d : user defined paskfile directory path.
  * -t : show defined tasks in paskfiles.
  * -v : vorbose mode.
  * -q : quiet mode.
+ * -x : debug mode.
  */
 
   /** config value array */
@@ -43,45 +49,86 @@ class Application{
       $this->conf = $parser->parse();
     }catch(Exception $err){
       $parser->displayError($err->getMessage());
-      exit(-1);
+      exit(Application::$SUCCESS);
     }
 
+    try{
+      $this->check_arguments();
+    }catch(Exception $err){
+      $writer = $this->get_writer();
+      $writer->error($err->getMessage());
+      exit(Application::$ERROR);
+    }
+
+    // create Loader and Runner instance
     $writer = $this->get_writer();
-    //-----------------------------
-    // define level
-    // if -q specified
-    //    quiet mode
-    // else if -v specified 
-    //    verbose mode
-    // else if -x specified
-    //    debug mode ????
-    // else
-    //    normal mode
-    // end
 
-    // create writer
-    // return writer
-    //-----------------------------
-
-    // set writer to loader, runner(constructor)
-
-    //----- create_loader ----
-//    $this->loader = new PaskLoader($this->conf['paskdir']); 
-    //------------------------
+    try{ 
+      $this->loader = new PaskLoader($this->conf->options['paskdir'], $writer); 
+    }catch(Exception $err){
+      // error occured  searching paskfile
+      $writer->error($err->getMessage());
+      exit(Application::$ERROR);
+    }
     
-    //----- create_runner ----
-//    $this->runner = new PaskRunner($loader, $this->conf); 
-    //------------------------
+    $this->runner = new PaskRunner($this->loader, $this->conf, $writer); 
 
-    // if -t specified
-    //   show list
-    // else 
-    //   $this->runner->do_tasks();
-    // end
+
+    if($this->conf->options['tasks']){
+       $this->show_tasklist();
+    }else{
+      try{
+        // TODO can't use task argument now...
+        $this->run_task($this->conf->args['taskname'] ,null);
+      }catch(Exception $err){
+        $writer->error($err->getMessage());
+        exit(Application::$ERROR);
+      }
+    }
 
     return 0;
   }
 
+  /**
+   * Create Writer Instance.
+   *
+   * @return Writer Instance
+   */
+  private function get_writer(){
+    // define writer level
+    $level = Writer::$NORMAL;
+
+    if($this->conf == null){
+      $level = Writer::$NORMAL;
+    }else if($this->conf->options['quiet']){
+      $level = Writer::$QUIET;
+    }else if($this->conf->options['verbose']){
+      $level = Writer::$VERBOSE;
+    }else if($this->conf->options['debug']){
+      $level = Writer::$DEBUG;
+    } 
+
+    // create and return writer
+    return ConsoleWriter::getInstance($level); 
+  }
+
+  /**
+   * check command arguments combination.
+   */ 
+  private function check_arguments(){
+    // TODO implement (throw Exception if error
+
+    $paskdir = realpath($this->conf->options['paskdir']);
+    if(!$paskdir){
+      throw new ArgumentError(
+        "Directory is not exist: " . $this->conf->options['paskdir']);
+    }else{
+      $this->conf->options['paskdir'] = $paskdir;
+    }
+
+    return;
+  }
+  
   /**
    * Create Console_CommandLine Parser Object.
    *
@@ -155,10 +202,12 @@ class Application{
   /**
    * Run task.
    */
-  private function run_tasks($task_name, $task_args){
-
-
-    $runner->run_tasks($task_name, $task_args);
+  private function run_task($task_name, $task_args){
+    try{ 
+      $this->runner->run_task($task_name, $task_args);
+    }catch(Exception $err){
+      throw $err;
+    }
   }
 
   //------------------------------------------
@@ -170,7 +219,7 @@ class Application{
 
     // TODO refine output string...
     foreach($ary as $task){
-      echo $task['name'] . ':' . $task['desc'] . '\n'; 
+      $writer->puts($task['name'] . ' : ' . $task['desc']); 
     };
   }
 

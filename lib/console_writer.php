@@ -6,13 +6,13 @@
 abstract class Writer{
   //---------------------------------
   /** level:verbose */
-  public static $VERBOSE = 'verbose';
+  public static $VERBOSE = "verbose";
   /** level:normal */
-  public static $NORMAL  = 'normal';
+  public static $NORMAL  = "normal";
   /** level:quiet */
-  public static $QUIET   = 'quiet'; 
+  public static $QUIET   = "quiet"; 
   /** level:debug (for developer) */
-  public static $DEBUG   = 'debug'; 
+  public static $DEBUG   = "debug"; 
   //---------------------------------
 
   /** output level */
@@ -56,18 +56,18 @@ abstract class Writer{
   /**  
    *
    */
-  public function puts($str){
+  public function puts($str){ 
     switch($this->level){
       case Writer::$DEBUG:
         fprintf($this->output, $this->debug_format($str) . "\n");
-        break;
+        return;
       case Writer::$VERBOSE:
       case Writer::$NORMAL:
         fprintf($this->output, $this->format($str) . "\n");
-        break;
+        return;
       case Writer::$QUIET:
       default: 
-        break;
+        return;
     }
   }
 
@@ -120,11 +120,11 @@ class ConsoleWriter extends Writer{
    * @param array $conf array('level' => Writer::XXXX)
    * @return ConsoleWriter Instance.
    */
-  public static function getInstance($conf){
-    if(ConsoleLogger::$instance == null){
-      $this->instance = new ConsoleWriter(STDOUT, STDERR, $conf['level']);
+  public static function getInstance($level){
+    if(ConsoleWriter::$instance == null){
+      ConsoleWriter::$instance = new ConsoleWriter(STDOUT, STDERR, $level);
     } 
-    return $this->instance;
+    return ConsoleWriter::$instance;
   } 
 }
 
