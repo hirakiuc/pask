@@ -1,9 +1,12 @@
 <?php
+/**
+ *
+ */ 
 
 /**
  * Abstract Task Class
  */
-class Pask{
+abstract class Pask{
   /** task description strings. */
   public $desc = "";
 
@@ -11,7 +14,6 @@ class Pask{
   public $before_tasks = array(); 
 
   /** need to implement task script in pure php scripts. */
-  public function run(){}
-}
-
-?> 
+  abstract public function run();
+} 
+?>

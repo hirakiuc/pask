@@ -1,4 +1,7 @@
 <?php 
+/**
+ *
+ */
 
 require_once('pask.php');
 require_once('pask_loader.php');
@@ -60,5 +63,4 @@ class PaskRunner{
     $this->writer->puts("Finish '" . $task_name . "' task.");
   } 
 } 
-
-?> 
+?>

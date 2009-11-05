@@ -1,7 +1,10 @@
 <?php
-
 /**
  *
+ */
+
+/**
+ * Utility Functions Class
  */
 class Utils{
 

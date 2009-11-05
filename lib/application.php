@@ -1,4 +1,7 @@
 <?php
+/**
+ *
+ */
 
 require_once('Console/CommandLine.php');
 
@@ -72,7 +75,6 @@ class Application{
     }
     
     $this->runner = new PaskRunner($this->loader, $this->conf, $writer); 
-
 
     if($this->conf->options['tasks']){
        $this->show_tasklist();
@@ -179,7 +181,7 @@ class Application{
     $parser->addArgument('taskname', array(
       'description' => 'taskname want to do.',
       'multiple'    => FALSE,
-      'optional'    => FALSE,
+      'optional'    => TRUE,
       'help_name'   => 'taskName'
     ));
 
@@ -195,8 +197,7 @@ class Application{
     //-----------------------------------
 
     return $parser;
-  }
-
+  } 
 
   //------------------------------------------
   /**
@@ -223,6 +224,5 @@ class Application{
     };
   }
 
-}
-
-?> 
+} 
+?>

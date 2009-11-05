@@ -97,7 +97,7 @@ abstract class Writer{
    * @param $str formated string.
    */
   protected function format($str){
-    return $str;
+    return "*** " . $str;
   }
 
   /**

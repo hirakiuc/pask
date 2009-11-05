@@ -1,4 +1,7 @@
 <?php
+/**
+ *
+ */
 
 require_once(dirname(__FILE__)."/../lib/include.php");
 
@@ -11,6 +14,5 @@ class HelloWorldTask extends Pask{
   public function run(){
     echo "Hello World !\n"; 
   }
-}
-
+} 
 ?>
