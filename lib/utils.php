@@ -63,5 +63,21 @@ class Utils{
     return strtolower(preg_replace('/([a-z])([A-Z])/',"$1_$2",$str));
   }
 
+
+  /**
+   * get microsec (float value)
+   */
+  public static function get_time(){
+    return microtime(TRUE);
+  }
+
+  /**
+   * calc microsec time diff and return formated string
+   */
+  public static function get_process_time($start_time){
+    // calc msec time diff.
+    $diff = round(microtime(TRUE) - $start_time); 
+    return sprintf("%0.2f",$diff);
+  }
 } 
 ?>

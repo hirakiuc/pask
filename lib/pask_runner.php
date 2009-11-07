@@ -53,23 +53,29 @@ class PaskRunner{
     $stack = $this->loader->create_taskstack($task_name); 
 
     $this->writer->puts("Run    '" . $task_name . "' task.");
+    $total_start_time = Utils::get_time();
 
     while(count($stack)!=0){
       try{ 
         $task_data = array_pop($stack); 
 
-        $this->writer->verbose("Start '" . $task_data['task_name']);
+        $this->writer->verbose("Start '".$task_data['task_name']);
+        $start_time = Utils::get_time();
 
         $task_data['pask']->run();
 
-        $this->writer->verbose("End   '" . $task_data['task_name']);
+        $process_time = Utils::get_process_time($start_time);
+        $this->writer->verbose(
+          "End   '".$task_data['task_name']."(".$process_time."[msec])");
 
       }catch(Exception $err){
         throw $err;
       }
     } 
 
-    $this->writer->puts("Finish '" . $task_name . "' task.");
+    $total_process_time = Utils::get_process_time($total_start_time);
+    $this->writer->puts(
+      "Finish '".$task_name."' task.(".$total_process_time."[msec])");
   } 
 } 
 ?>
