@@ -135,11 +135,14 @@ class PaskLoader{
 
     $before_tasks = $task_data['pask']->before_tasks;
 
-    if(count($before_tasks) > 0){
+    if($before_tasks != null && count($before_tasks) > 0){
       resolve_dependency($before_tasks);
     }
 
     $this->push_task($task_data);
+
+    // need to reverse taskarray. (because of sorting order by task order.)
+    $this->task_stack = array_reverse($this->task_stack);
 
     return $this->task_stack;
   }
@@ -197,6 +200,9 @@ class PaskLoader{
       }
 
       $obj = $ref->newInstance(); 
+
+      $this->check_taskclass_values($task_classname, $obj);
+
     }catch(Exception $err){
       throw $err;
     }
@@ -206,6 +212,48 @@ class PaskLoader{
       'pask' => $obj,
       'namespace' => $this->get_namespace($task_name)
     );
+  }
+
+  /**
+   *
+   */
+  private function check_taskclass_values($task_classname, $obj){
+    // desc variable type check
+    if(!is_string($obj->desc)){
+      throw new InvalidTaskClassError(
+        $task_classname . " class must have a 'desc' string instance value.");
+    }
+
+    if($obj->before_tasks != null){
+      if(!is_array($obj->before_tasks)){
+        throw new InvalidTaskClassError(
+          $task_classname
+          ." class must have a 'before_tasks' array instance value."
+        );
+      }
+      
+      $keys = array_keys($obj->before_tasks);
+      foreach($keys as $key){
+        if(!is_int($key)){
+          throw new InvalidTaskClassError(
+            "'before_tasks' in the "
+            .$task_classname 
+            ." class instance must a simple strings array."
+          );
+        }
+      }
+
+      $values = array_values($obj->before_tasks);
+      foreach($values as $value){
+        if(!is_string($value)){
+          throw new InvalidTaskClassError(
+            "'before_tasks' in the "
+            .$task_classname 
+            ." class instance must a simple strings array."
+          );
+        }
+      } 
+    } 
   }
 
   //--------------------------------------------
