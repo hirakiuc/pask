@@ -79,7 +79,7 @@ abstract class Writer{
    *
    */
   public function error($str){ 
-    $this->output_msg(Writer::$ERROR, $this->error_format($str));
+    fprintf($this->err_output, $this->error_format($str) . "\n");
   } 
 
 
