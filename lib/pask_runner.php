@@ -50,7 +50,11 @@ class PaskRunner{
     // split $task_name to namespace and camelCasedTaskName
 //    $ary = Utils::parse_taskname($task_name);
 
-    $stack = $this->loader->create_taskstack($task_name); 
+    try{
+      $stack = $this->loader->create_taskstack($task_name); 
+    }catch(Exception $err){
+      throw $err;
+    }
 
     $this->writer->puts("Run    '" . $task_name . "' task.");
     $total_start_time = Utils::get_time();
