@@ -86,7 +86,7 @@ class Application{
     $this->runner = new PaskRunner($this->loader, $this->conf, $writer); 
 
     if($this->conf->options['tasks']){
-       $this->show_tasklist();
+       $this->show_tasklist($writer);
     }else{
       try{
         // TODO can't use task argument now...
@@ -234,7 +234,7 @@ class Application{
    * show defined tasks.
    */
   private function show_tasklist($writer){
-    $ary = $loader->get_tasks_desc();
+    $ary = $this->loader->get_tasks_desc();
 
     // TODO refine output string...
     foreach($ary as $task){

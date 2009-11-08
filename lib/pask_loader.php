@@ -105,6 +105,7 @@ class PaskLoader{
           if(mb_ereg_match($this->task_ext_regexp,$fpath)){
 
             $taskname = $this->get_taskname($fpath); 
+
             $this->paskfile_map[$taskname] = $fpath; 
 
             $this->writer->debug("File loaded : " . $fpath);
@@ -136,7 +137,7 @@ class PaskLoader{
     $before_tasks = $task_data['pask']->before_tasks;
 
     if($before_tasks != null && count($before_tasks) > 0){
-      resolve_dependency($before_tasks);
+      $this->resolve_dependency($before_tasks);
     }
 
     $this->push_task($task_data);
@@ -154,7 +155,7 @@ class PaskLoader{
    * @param array a array with task_name strings
    */ 
   private function resolve_dependency($before_tasks){ 
-    foreach($before_tasks as $task){
+    foreach($before_tasks as $task_name){
       $task_data = $this->load_paskfile($task_name);
       $before_tasks = $task_data['pask']->before_tasks;
 
@@ -174,6 +175,7 @@ class PaskLoader{
    * @return a array for task stask.
    */
   private function load_paskfile($task_name){ 
+
     // resolve paskfile path from task_name.
     $fpath = $this->paskfile_map[$task_name];
     if($fpath == null){
@@ -266,8 +268,10 @@ class PaskLoader{
     // [ { 'task_name' => $taskname, 'desc' => $desc'}, ....] 
     $defined_tasks = array(); 
 
-    foreach($this->paskfile_map as $task){ 
-      try{
+    $paskfile_fpaths = array_keys($this->paskfile_map);
+
+    foreach($paskfile_fpaths as $fpath){ 
+      try{ 
         $task_data = $this->load_paskfile($fpath); 
 
         array_push($defined_tasks, array( 
