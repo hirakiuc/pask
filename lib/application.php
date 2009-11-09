@@ -101,11 +101,9 @@ class Application{
   }
 
   /**
-   * Create Writer Instance.
    *
-   * @return Writer Instance
    */
-  private function get_writer(){
+  private function get_writer_level(){
     // define writer level
     $level = Writer::$NORMAL;
 
@@ -118,7 +116,16 @@ class Application{
     }else if($this->conf->options['debug']){
       $level = Writer::$DEBUG;
     } 
+    return $level;
+  }
 
+  /**
+   * Create Writer Instance.
+   *
+   * @return Writer Instance
+   */
+  private function get_writer(){
+    $level = $this->get_writer_level();
     // create and return writer
     return ConsoleWriter::getInstance($level); 
   }
@@ -234,12 +241,16 @@ class Application{
    * show defined tasks.
    */
   private function show_tasklist($writer){
-    $ary = $this->loader->get_tasks_desc();
+    try{ 
+      $ary = $this->loader->get_tasks_desc();
 
-    // TODO refine output string...
-    foreach($ary as $task){
-      $writer->puts($task['name'] . ' : ' . $task['desc']); 
-    };
+      $task_writer = TaskListWriter::getInstance($this->get_writer_level());
+
+      $task_writer->puts_tasks($ary, $this->conf->options['paskdir']); 
+    }catch(Exception $err){
+      $this->writer->error($err->getMessage());
+      return Application::$ERROR;
+    }
   }
 
 } 

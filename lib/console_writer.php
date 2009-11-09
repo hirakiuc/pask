@@ -86,7 +86,7 @@ abstract class Writer{
   /**
    *
    */
-  private function output_msg($target_level, $msg){
+  protected function output_msg($target_level, $msg){
     if($this->level >= $target_level){
       fprintf($this->output, $msg . "\n");
     }
@@ -141,4 +141,105 @@ class ConsoleWriter extends Writer{
     return ConsoleWriter::$instance;
   } 
 } 
+
+/**
+ * TaskList ConsoleWriter Class
+ */
+class TaskListWriter extends ConsoleWriter{
+  /** this class value */
+  private static $instance = null;
+
+  /**
+   * factory method
+   */
+  public static function getInstance($level){
+    if(TaskListWriter::$instance == null){
+      TaskListWriter::$instance = new TaskListWriter(STDOUT, STDERR,$level); 
+    }
+    return TaskListWriter::$instance;
+  }
+
+  /**  
+   * output task list 
+   *
+   * @param array $ary ( ('name'=>$task_name, 'desc'=>$desc),....)
+   */
+  public function puts_tasks($ary, $pask_fpath){ 
+    $out = array( "(in ". $pask_fpath .")" );
+
+    // Create task output format.
+    $longest_size = $this->get_longest_taskname_length($ary); 
+    $format_string = "% -".$longest_size."s # %s";
+
+    // sort by strnatcmp in tasknames.
+    $ordered_ary = $this->sort_output_tasks($ary);
+
+    // push output array
+    foreach($ordered_ary as $task_data){
+      array_push($out, 
+        sprintf($format_string, $task_data['name'],$task_data['desc'])
+      ); 
+    } 
+
+    // output each lines.
+    foreach($out as $line){
+      $this->output_msg(Writer::$NORMAL, $line);
+    } 
+  }
+
+
+  /**
+   *  get longest task_name
+   */
+  private function get_longest_taskname_length($ary){
+    $task_names = $this->get_tasknames($ary);
+
+    // TODO if usort return false
+    usort($task_names, create_function('$str1, $str2','
+        $length_str1 = mb_strlen($str1);
+        $length_str2 = mb_strlen($str2);
+
+        if($length_str1 > $length_str2){
+          return 1;
+        }else if($length_str1 == $length_str2){
+          return 0;
+        }else{
+          return -1;
+        } 
+      ')
+    );
+
+    return mb_strlen(array_pop($task_names));
+  }
+
+  /**
+   *
+   */
+  private function get_tasknames($ary){
+    $ret = array();
+    foreach($ary as $task){
+      array_push($ret, $task['name']);
+    }
+    return $ret;
+  }
+
+  /**
+   * sort tasks in alphabetical order
+   */
+  private function sort_output_tasks($ary){
+    $target_ary = $ary;
+
+    // TODO if usort return false
+    usort($target_ary, 
+      create_function('$task_data1, $task_data2','
+        return strnatcmp($task_data1["name"], $task_data2["name"]);
+      ')
+    );
+
+    return $target_ary; 
+  }
+
+}
+
+
 ?>
