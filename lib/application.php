@@ -142,9 +142,36 @@ class Application{
      * -q : not(-v,-x)    ok(-d,-t)  must(taskname)
      * -x : not(-q,-v)    ok(-d,-t)  must(taskname)
      */
+    if($this->conf->options['tasks']){
+      // do not specify task_name
+      if($this->conf->args['taskname'] != null){
+        throw new ArgumentErrr("Can't use task_name when you -t option use.");
+      }else{
+        return;
+      }
+    }
+    
+    $verbose_flag = $this->conf->options['verbose'];
+    $quiet_flag   = $this->conf->options['quiet'];
+    $debug_flag   = $this->conf->options['debug'];
 
+    // most verbose mode is used.
+    if($debug_flag){
+      if($quiet_flag || $verbose_flag){
+        // use -x option
+        $this->conf->options['quiet']   = FALSE;
+        $this->conf->options['verbose'] = FALSE;
+      }
+    }
 
+    if($verbose_flag){
+      if($quiet_flag){
+        // use -v option
+        $this->conf->options['quiet'] = FALSE;
+      }
+    } 
 
+    // normalize paskdir path.
     $paskdir = realpath($this->conf->options['paskdir']);
     if(!$paskdir){
       throw new ArgumentError(
