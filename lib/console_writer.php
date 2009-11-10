@@ -140,6 +140,15 @@ class ConsoleWriter extends Writer{
     } 
     return ConsoleWriter::$instance;
   } 
+
+  /**
+   * Get ConsoleWriter Instance (for Application Method)
+   *
+   * @return ConsoleWriter::$instance or null
+   */
+  public static function getInstance(){
+    return ConsoleWriter::$instance;
+  }
 } 
 
 /**
