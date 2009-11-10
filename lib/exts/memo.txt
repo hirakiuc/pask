@@ -1,12 +1,15 @@
 create in this directory for each extention libraries.
 I think these library in paskfile for more creating tasks easier.
 
+see rake tasks: http://rake.rubyforge.org/
+
  - depend on pear packages
    - phpdoc
    - php codesniffer
    - ....
  - independent utils 
-   - filesystem
+   - file
+   - directory 
    - shell
    - ssh
    - ....

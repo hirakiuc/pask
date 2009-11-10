@@ -86,7 +86,7 @@ class Application{
     $this->runner = new PaskRunner($this->loader, $this->conf, $writer); 
 
     if($this->conf->options['tasks']){
-       $this->show_tasklist($writer);
+       $this->show_tasklist();
     }else{
       try{
         // TODO can't use task argument now...
@@ -125,9 +125,10 @@ class Application{
    * @return Writer Instance
    */
   private function get_writer(){
-    $level = $this->get_writer_level();
+    $writer = ConsoleWriter::getInstance();
+    $writer->set_level($this->get_writer_level());
     // create and return writer
-    return ConsoleWriter::getInstance($level); 
+    return $writer;
   }
 
   /**
@@ -136,6 +137,15 @@ class Application{
   private function check_arguments(){
     // TODO implement (throw Exception if error
     
+    // normalize paskdir path.
+    $paskdir = realpath($this->conf->options['paskdir']);
+    if(!$paskdir){
+      throw new ArgumentError(
+        "Directory is not exist: " . $this->conf->options['paskdir']);
+    }else{
+      $this->conf->options['paskdir'] = $paskdir;
+    }
+
     /* -d : ok(-d,-t,-v,-q,-x,taskname)
      * -t : not(taskname) ok(-d,-v,-q,-x)
      * -v : not(-q,-x)    ok(-d,-t)  must(taskname)
@@ -145,10 +155,12 @@ class Application{
     if($this->conf->options['tasks']){
       // do not specify task_name
       if($this->conf->args['taskname'] != null){
-        throw new ArgumentErrr("Can't use task_name when you -t option use.");
-      }else{
-        return;
-      }
+        throw new ArgumentError("Can't use task_name when you -t option use.");
+      } 
+    }else{
+      if($this->conf->args['taskname'] == null){ 
+        throw new ArgumentError("Must use task_name.");
+      } 
     }
     
     $verbose_flag = $this->conf->options['verbose'];
@@ -171,14 +183,6 @@ class Application{
       }
     } 
 
-    // normalize paskdir path.
-    $paskdir = realpath($this->conf->options['paskdir']);
-    if(!$paskdir){
-      throw new ArgumentError(
-        "Directory is not exist: " . $this->conf->options['paskdir']);
-    }else{
-      $this->conf->options['paskdir'] = $paskdir;
-    }
 
     return;
   }
@@ -267,11 +271,12 @@ class Application{
   /**
    * show defined tasks.
    */
-  private function show_tasklist($writer){
+  private function show_tasklist(){
     try{ 
       $ary = $this->loader->get_tasks_desc();
 
-      $task_writer = TaskListWriter::getInstance($this->get_writer_level());
+      $task_writer = TaskListWriter::getInstance();
+      $task_writer->set_level($this->get_writer_level());
 
       $task_writer->puts_tasks($ary, $this->conf->options['paskdir']); 
     }catch(Exception $err){

@@ -42,8 +42,8 @@ abstract class Writer{
   /**
    *
    */
-  protected function __construct($output, $err_output, $level){
-    $this->level = $level;
+  protected function __construct($output, $err_output){
+    $this->level = Writer::$NORMAL;
     $this->output   = $output;
     $this->err_output = $err_output;
   }
@@ -51,7 +51,14 @@ abstract class Writer{
   /**
    *
    */
-  abstract public static function getInstance($conf);
+  public function set_level($level){
+    $this->level = $level;
+  }
+
+  /**
+   *
+   */
+  abstract public static function getInstance();
 
   //----------------------------------------
   /**  
@@ -134,21 +141,14 @@ class ConsoleWriter extends Writer{
    * @param array $conf array('level' => Writer::XXXX)
    * @return ConsoleWriter Instance.
    */
-  public static function getInstance($level){
+  public static function getInstance(){
     if(ConsoleWriter::$instance == null){
-      ConsoleWriter::$instance = new ConsoleWriter(STDOUT, STDERR, $level);
+      ConsoleWriter::$instance = new ConsoleWriter(STDOUT, STDERR);
+      ConsoleWriter::$instance->set_level(Writer::$NORMAL);
     } 
     return ConsoleWriter::$instance;
   } 
 
-  /**
-   * Get ConsoleWriter Instance (for Application Method)
-   *
-   * @return ConsoleWriter::$instance or null
-   */
-  public static function getInstance(){
-    return ConsoleWriter::$instance;
-  }
 } 
 
 /**
@@ -161,9 +161,10 @@ class TaskListWriter extends ConsoleWriter{
   /**
    * factory method
    */
-  public static function getInstance($level){
+  public static function getInstance(){
     if(TaskListWriter::$instance == null){
-      TaskListWriter::$instance = new TaskListWriter(STDOUT, STDERR,$level); 
+      TaskListWriter::$instance = new TaskListWriter(STDOUT, STDERR); 
+      TaskListWriter::$instance->level = Writer::$NORMAL;
     }
     return TaskListWriter::$instance;
   }
