@@ -15,6 +15,17 @@ require_once('PHPUnit/Framework.php');
 
 class ApplicationTest extends PHPUnit_Framework_TestCase{
 
+  public function testExitCode(){
+    $ref = new ReflectionClass("Application");
+    $static_values = $ref->getStaticProperties();
+    
+//    $success_code = $ref->getStaticPropertyValue("SUCCESS"); 
+    $this->assertEquals(0, $static_values["SUCCESS"]);
+
+//    $error_code = $ref->getStaticPropertyValue("ERROR");
+    $this->assertEquals(1, $static_values["ERROR"]); 
+  }
+
 }
 
 
