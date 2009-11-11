@@ -3,7 +3,7 @@
 /**
  *
  */
-class CommandFaildError extends Exception{}
+class CommandFailedError extends Exception{}
 
 /**
  *
@@ -17,7 +17,7 @@ class Shell{
    */
   public static function sh($cmd){
     $ret = system($cmd, $retval);
-    if(is_string($ret) || $ret == FALSE){
+    if($ret == FALSE){
       throw new CommandFailedError("command:'".$cmd."' failed.");
     }
   }
