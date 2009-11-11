@@ -12,6 +12,10 @@ class InvalidParentDirectoryError extends Exception{}
 /**  */
 class FileListingError extends Exception{}
 
+/**  */
+class DeleteDirectoryFailedError extends Exception{}
+
+
 /**
  *
  */
@@ -22,7 +26,7 @@ class DirUtil{
    *
    * @param $dir_path string target directory path to create.
    */
-  public static function create_dir($dir_full_path){ 
+  public static function create($dir_full_path){ 
     $dirs = implode("/", $dir_full_path);
 
     $path = "/";
@@ -50,6 +54,77 @@ class DirUtil{
 
     $writer = ConsoleWriter::getInstance();
     $writer->puts("create: " . $dir_full_path);
+  }
+
+  /**
+   *
+   * @param string $dir_full_path  target directory fullpath.
+   * @param bool   $recursive      delete recursively(TRUE) or not(FALSE:default)
+   */
+  public static function delete($dir_full_path, $recursive){
+    $normalized_dpath = realpath($dir_full_path);
+
+    // TODO privame method 
+    // ------------------------------------------------
+    if($normalized_dpath == null){
+      throw new InvalidArgumentPathError(
+        "Invalid Argument path (realpath() failed): "
+        .$dir_full_path
+      ); 
+    } 
+    // ------------------------------------------------
+
+    if($recursive){
+      $this->recursive_delete($normalized_dpath);
+    }else{
+      $this->targetdir_delete($normalized_dpath);
+    }
+  }
+
+  /**
+   *
+   */
+  private static function recursive_delete($dpath){
+    try{
+      $dir_iter = new RecursiveDirectoryIterator($dpath);
+      $iter = new RecursiveIteratorIterator($dir_iter, 
+                  RecursiveIteratorIterator::CHILD_FIRST);
+      
+      foreach($iter as $file){
+        if(!$file->isDot()){
+          if($file->isFile()){
+            // delete file
+            FileUtil.delete($file->getPathname); 
+          }else{
+            // delete directory
+            if(!rmdir($file->getPathname())){
+              throw new DeleteDirectoryFailedError(
+                "Failed to delete the directory: "
+                .$file->getPathname()
+              );
+            } 
+          }
+        }
+      } 
+    }catch(Exception $err){
+      throw $err;
+    } 
+  }
+
+  /**
+   *  
+   */
+  private static function targetdir_delete($dpath){
+    try{ 
+      if(!rmdir($normalized_dpath)){
+        throw new DeleteDirectoryFailedError(
+          "Failed to delete the directory: "
+          .$normalized_dpath
+        );
+      }
+    }catch(Exception $err){
+      throw $err;
+    }
   }
 
   /**
