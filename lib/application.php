@@ -204,7 +204,7 @@ class Application{
       'description'=> 'specify paskfile directory.',
       'help_name'  => 'PASKDIR',
       'action'     => 'StoreString',
-      'default'    => '../tasks'
+      'default'    => '../sample'
     )); 
 
     $parser->addOption('verbose', array(
