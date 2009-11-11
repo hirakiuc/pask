@@ -21,6 +21,9 @@ class FileWriteFailedError extends Exception{}
 /**  */
 class FileLockFailedError extends Exceotion{}
 
+/**  */
+class DeleteFileFailedError extends Exception{}
+
 /**
  *
  */ 
@@ -31,7 +34,7 @@ class FileUtil{
    *
    * @param $fpath string target file path to create.
    */
-  public static function create_file($fpath){
+  public static function create($fpath){
     $parent_dir = dirname($fpath);
 
     $normalized_dpath = realpath($parent_dir);
@@ -58,12 +61,43 @@ class FileUtil{
     }else{
       if(!touch($normalized_fpath)){
         throw new CreateFileFailedError(
-          "Failed to create a file: " 
+          "Failed to create the file: " 
           . $normalized_fpath 
         );
       }else{
         $writer->puts("Create: " . $normalized_fpath); 
       }
+    }
+  }
+
+  /**
+   *
+   */
+  public static function delete($fpath){
+    $parent_dir = dirname($fpath);
+
+    $normalized_dpath = realpath($parent_dir);
+    if($normalized_dpath == null){
+      throw new CreateFileFiledError(
+        "Failed to create a file: "
+        ."parent directory don't exist:".$normalized_dpath
+      ); 
+    }
+
+    $writer = ConsoleWriter::getInstance();
+    $normalized_fpath = $normalized_dpath."/".basename($fpath);
+
+    if(file_exists($normalized_fpath)){
+      if(!unlink($normalized_fpath)){
+        throw new DeleteFileFailedError(
+          "Failed to delete the file: "
+          . $normalized_fpath
+        );
+      }else{
+        $writer->puts("Delete: " . $normalized_fpath);
+      }
+    }else{
+      $writer->puts("File don't exists:".$normalized_fpath);
     }
   }
 
