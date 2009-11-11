@@ -1,24 +1,25 @@
 <?php
 
 require_once("shell.php");
+require_once("dir.php");
 
 /**  */
-class CreateFileFiledError extends Exception{}
-
-/**  */
-class CreateDirectoryFailedError extends Exception{}
+class CreateFileFailedError extends Exception{}
 
 /**  */
 class FileAlreadyExistError extends Exception{}
 
 /**  */
-class DirectoryAlreadyExistError extends Exception{}
+class InvalidFilePathError extends Exception{}
 
 /**  */
-class InvalidParentDirectoryError extends Exception{}
+class CantOpenFileError extends Exception{}
 
 /**  */
-class FileListingError extends Exception{}
+class FileWriteFailedError extends Exception{}
+
+/**  */
+class FileLockFailedError extends Exceotion{}
 
 /**
  *
@@ -67,73 +68,52 @@ class FileUtil{
   }
 
   /**
-   * create directory recursively.(same 'mkdir -p $dir_path)
+   * write the $lines to the $fpath with $mode.
    *
-   * @param $dir_path string target directory path to create.
+   * @param string $fpath file path to write the contents.
+   * @param string $mode  file open mode(@see fopen)
+   * @param array  $lines simple array contain strings
    */
-  public static function create_dir($dir_full_path){ 
-    $dirs = implode("/", $dir_full_path);
-
-    $path = "/";
-    foreach($dirs as $dir){
-      $path = $path . "/" . $dir;
-      if(!file_exist($path)){
-        // create if not exist dir
-        if(mkdir($path)){
-          // create dir failed..
-          throw new CreateDirectoryFailedError(
-            "Failed to create a directory: " 
-            .$path
-          );
-        }
-      }else if(!is_dir($path)){
-        // same name file exists.
-        throw new CreateDirectoryFailedError(
-          "Failed to create a directory: "
-          ."same name file exists(" .$path .")"
-        );
-      }else{
-        // already exist the $path directory.
-      } 
-    } 
-
+  public function write($fpath, $mode, $lines){
     $writer = ConsoleWriter::getInstance();
-    $writer->puts("create: " . $dir_full_path);
-  }
 
-  
-  /**
-   * Get files and directories list
-   *
-   * @param string $dir_path target_directory path
-   * @param function $filter filter function (argument is a DirectoryIterator object)
-   * @return array( fpath1, fpath2, ... ) (fpath specify file or directory.)
-   */
-  public static function lists($dir_path, $filter=null){
-    $normalized_dpath = realpath($dir_path);
-    if($normalized_dpath == null){
-      throw new FileListingError(
-        "Failed File listing: failed to normalize " . $dir_path
-      );
+    $normalized_fpath = realpath($fpath);
+    if($normalized_fpath == null){
+      throw new InvalidFileError("Invalid file path:" . $fpath);
     }
 
-    $ret = array();
+    $fp = fopen($normalized_fpath);
 
-    try{
-      $iter = new DirectoryIterator($normalized_dpath);
-      foreach($iter as $fileinfo){
-        if(!$fileinfo->isDot()){
-          array_push($ret, $fileinfo->getPathname());
+    if($fp){
+      if(flock($fp, LOCK_EX)){
+        $writer->debug("Write the file:" . $normalized_fpath);
+
+        // write each lines to the file.
+        foreach($lines as $line){
+          if(fwrite($fp, $line) == FALSE){
+            $writer->error("Failed to write the file:".$normalized_fpath);
+
+            throw new FileWriteFailedError(
+              "Failed to write the file:"
+              .$normalized_fpath
+            ); 
+          }else{
+            $writer->debug("write:" . $line);
+          }
         }
-      }
 
-      if($filter != null){
-        array_walk($ret, $filter);
+      }else{
+        throw new FileLockFailedError(
+          "Can't lock the file to write:"
+          .$normalized_fpath
+        );
       }
-
-    }catch(Exception $err){
-      throw $err;
-    } 
+    }else{
+      throw new FileOpenFailedError(
+        "Can't open the file:" 
+        .$normalized_fpath
+      );
+    }
   }
 
 }
