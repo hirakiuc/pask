@@ -194,8 +194,8 @@ class Application{
    */
   private function create_optparser(){
     $parser = new Console_CommandLine(array(
-      'description' => 'Task Management Framework on PHP',
-      'version'     => '0.0.1' 
+      'description' => 'Pure PHP Task Management Framework',
+      'version'     => '0.1.0' 
     ));
 
     $parser->addOption('paskdir', array(
