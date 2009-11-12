@@ -1,5 +1,9 @@
 <?php
 
+require_once(dirname(__FILE__)."/../console_writer.php");
+require_once(dirname(__FILE__)."/../errors.php");
+require_once("dir.php"); 
+
 /**  */
 class CreateDirectoryFailedError extends Exception{}
 
@@ -26,63 +30,63 @@ class DirUtil{
    *
    * @param $dir_path string target directory path to create.
    */
-  public static function create($dir_full_path){ 
-    $dirs = implode("/", $dir_full_path);
-
-    $path = "/";
-    foreach($dirs as $dir){
-      $path = $path . "/" . $dir;
-      if(!file_exist($path)){
-        // create if not exist dir
-        if(mkdir($path)){
-          // create dir failed..
-          throw new CreateDirectoryFailedError(
-            "Failed to create a directory: " 
-            .$path
-          );
-        }
-      }else if(!is_dir($path)){
-        // same name file exists.
-        throw new CreateDirectoryFailedError(
-          "Failed to create a directory: "
-          ."same name file exists(" .$path .")"
-        );
-      }else{
-        // already exist the $path directory.
-      } 
-    } 
-
+  public static function create($dir_path){ 
     $writer = ConsoleWriter::getInstance();
-    $writer->puts("create: " . $dir_full_path);
+
+    if(!file_exists($dir_path)){
+      // create if not exist dir
+      if(!mkdir($dir_path)){
+        // create dir failed..
+        throw new CreateDirectoryFailedError(
+          "Failed to create a directory: " 
+          .$dir_path
+        );
+      }
+
+      $writer->puts("create: " . $dir_path); 
+    }else if(!is_dir($dir_path)){
+      // same name file exists.
+      throw new CreateDirectoryFailedError(
+        "Failed to create a directory: "
+        ."same name file exists(" .$dir_path .")"
+      );
+    }else{
+      // already exist the $path directory.  
+      $writer->puts("Directory already exist: " . $dir_path); 
+    } 
   }
 
   /**
+   * delete target directory.
    *
    * @param string $dir_full_path  target directory fullpath.
    * @param bool   $recursive      delete recursively(TRUE) or not(FALSE:default)
    */
-  public static function delete($dir_full_path, $recursive){
-    $normalized_dpath = realpath($dir_full_path);
+  public static function delete($dir_path, $recursive=FALSE){
+    $normalized_dpath = realpath($dir_path);
 
     // TODO privame method 
     // ------------------------------------------------
     if($normalized_dpath == null){
       throw new InvalidArgumentPathError(
         "Invalid Argument path (realpath() failed): "
-        .$dir_full_path
+        .$dir_path
       ); 
     } 
     // ------------------------------------------------
 
     if($recursive){
-      $this->recursive_delete($normalized_dpath);
+      DirUtil::recursive_delete($normalized_dpath);
     }else{
-      $this->targetdir_delete($normalized_dpath);
+      DirUtil::targetdir_delete($normalized_dpath);
     }
   }
 
   /**
+   * delete recursively target directory.
+   * (use RecursiveDirectoryIterator and FileUtil.delete...)
    *
+   * @param string $dpath normalized target directory path.
    */
   private static function recursive_delete($dpath){
     try{
@@ -112,14 +116,16 @@ class DirUtil{
   }
 
   /**
-   *  
+   * delete only target directory.(use rmdir() in php)
+   *
+   * @param string $dpath normalized target directory path.
    */
   private static function targetdir_delete($dpath){
     try{ 
-      if(!rmdir($normalized_dpath)){
+      if(!rmdir($dpath)){
         throw new DeleteDirectoryFailedError(
           "Failed to delete the directory: "
-          .$normalized_dpath
+          .$dpath
         );
       }
     }catch(Exception $err){
@@ -159,9 +165,9 @@ class DirUtil{
     }catch(Exception $err){
       throw $err;
     } 
-  }
 
-
+    return $ret;
+  } 
 }
 
 ?>

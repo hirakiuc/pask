@@ -1,6 +1,6 @@
 <?php
 
-require_once("shell.php");
+require_once(dirname(__FILE__)."/../console_writer.php");
 require_once("dir.php");
 
 /**  */
@@ -19,7 +19,7 @@ class CantOpenFileError extends Exception{}
 class FileWriteFailedError extends Exception{}
 
 /**  */
-class FileLockFailedError extends Exceotion{}
+class FileLockFailedError extends Exception{}
 
 /**  */
 class DeleteFileFailedError extends Exception{}
