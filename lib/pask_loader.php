@@ -56,6 +56,9 @@ class PaskLoader{
 
   /**
    * Constractor
+   *
+   * @param string $taskdir_path
+   * @param object $writer 
    */
   public function __construct($taskdir_path, $writer){
     $this->writer = $writer;
@@ -86,6 +89,9 @@ class PaskLoader{
 
   /**
    * Search paskfile in the taskdir recursively.
+   *
+   * @access private
+   * @param DirectoryIteratorInstance $dir_iterator
    */
   private function search_paskfiles($dir_iterator){
     try{
@@ -94,10 +100,8 @@ class PaskLoader{
         $fpath = $file->getPathname();
 
         if($file->isDir() || $file->isDot()){
-          /* 
-            $next_dir = new DirectoryIterator($file->getPathname());
-            $this->search_paskfiles($next_dir); 
-           */
+//          $next_dir = new DirectoryIterator($file->getPathname());
+//          $this->search_paskfiles($next_dir); 
           $this->writer->debug("Dir Skipped : " . $fpath);
 
         }else if($file->isFile()){
@@ -129,6 +133,7 @@ class PaskLoader{
    * Create TaskStack in this instance.
    *  
    * @param string $task_name namespaced task_name
+   * @return task_stack
    */
   public function create_taskstack($task_name){
 
@@ -171,7 +176,8 @@ class PaskLoader{
    * Load a Specified paskfile by namespaced task_name, 
    * and return a array for task stask.
    *
-   * @task_name string namespaced task_name
+   * @access private
+   * @param mixed $task_name string namespaced task_name
    * @return a array for task stask.
    */
   private function load_paskfile($task_name){ 
@@ -217,7 +223,11 @@ class PaskLoader{
   }
 
   /**
+   * check taskclass (throw exception if failed)
    *
+   * @access private
+   * @param string $task_classname
+   * @param mixed $obj Instantiated Task Class
    */
   private function check_taskclass_values($task_classname, $obj){
     // desc variable type check
@@ -289,6 +299,8 @@ class PaskLoader{
   //--------------------------------------------
   /**
    * get a array mapped task_name and paskfile path.
+   *
+   * @return paskfile_map
    */
   public function get_paskfile_map(){
     return $this->paskfile_map;
@@ -301,6 +313,7 @@ class PaskLoader{
   /**
    * create namespaced task_name from paskfile path.
    *
+   * @access private
    * @param string $file_path paskfile fullpath
    * @return namespaced taskname string
    */
@@ -329,6 +342,7 @@ class PaskLoader{
   /**
    * get ClassName from namespaced task_name.
    *
+   * @access private
    * @param string $task_name namespaced task_name
    * @return ClassName
    */
@@ -340,6 +354,7 @@ class PaskLoader{
   /**
    * get namespace from namespaced task_name.
    *
+   * @access private
    * @param string $task_name namespaced task_name
    * @return namespace(separated by ':') or ""(root namespace)
    */
@@ -352,7 +367,8 @@ class PaskLoader{
   /**
    * push a specified array object into the task stack.
    *
-   * @param array a array contain the task stack object.
+   * @access private
+   * @param array $task_data a array contain the task stack object.
    */
   private function push_task($task_data){
     array_push($this->task_stack, $task_data);

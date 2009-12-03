@@ -14,6 +14,7 @@
 
 /**
  * Abstract Task Class
+ * @access abstract
  */
 abstract class Pask{
   /** task description strings. */

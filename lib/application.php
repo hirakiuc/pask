@@ -45,16 +45,15 @@ class Application{
   private $loader = null;
 
   /**
-   *
+   * constractor
    */
   public function __construct(){ 
   }
 
   /**
-   * call first.
+   * Run Application (call first.)
    */
   public function run(){
-    // opt parser ??
     $parser = $this->create_optparser();
 
     try{
@@ -89,7 +88,6 @@ class Application{
        $this->show_tasklist();
     }else{
       try{
-        // TODO can't use task argument now...
         $this->run_task($this->conf->args['taskname'] ,null);
       }catch(Exception $err){
         $writer->error($err->getMessage());
@@ -101,10 +99,11 @@ class Application{
   }
 
   /**
+   *  get writer level (like log level.)
    *
+   *  @return Writer level(Writer class constant) from argument. 
    */
   private function get_writer_level(){
-    // define writer level
     $level = Writer::$NORMAL;
 
     if($this->conf == null){
@@ -133,9 +132,11 @@ class Application{
 
   /**
    * check command arguments combination.
+   * throw exception if failed.
+   *
+   * @throw ArgumentError argument combination was invalid.
    */ 
   private function check_arguments(){
-    // TODO implement (throw Exception if error
     
     // normalize paskdir path.
     $paskdir = realpath($this->conf->options['paskdir']);
@@ -167,10 +168,8 @@ class Application{
     $quiet_flag   = $this->conf->options['quiet'];
     $debug_flag   = $this->conf->options['debug'];
 
-    // most verbose mode is used.
     if($debug_flag){
       if($quiet_flag || $verbose_flag){
-        // use -x option
         $this->conf->options['quiet']   = FALSE;
         $this->conf->options['verbose'] = FALSE;
       }
@@ -182,7 +181,6 @@ class Application{
         $this->conf->options['quiet'] = FALSE;
       }
     } 
-
 
     return;
   }
@@ -267,7 +265,6 @@ class Application{
     }
   }
 
-  //------------------------------------------
   /**
    * show defined tasks.
    */

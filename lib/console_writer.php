@@ -40,7 +40,10 @@ abstract class Writer{
   protected $err_output = null;
 
   /**
+   * constractor 
    *
+   * @param mixed $output destination where normal messagse put.
+   * @param mixed $err_output destination where error message put.
    */
   protected function __construct($output, $err_output){
     $this->level = Writer::$NORMAL;
@@ -49,41 +52,54 @@ abstract class Writer{
   }
 
   /**
+   * set writer level.
    *
+   * @param integer $level Writer class constants.
    */
   public function set_level($level){
     $this->level = $level;
   }
 
   /**
+   * getter method for Writer Instance.
    *
+   * @abstract
+   * @return Writer Instance.
    */
   abstract public static function getInstance();
 
   //----------------------------------------
   /**  
+   * write verbose message
    *
+   * @param string $str verbose message.
    */
   public function verbose($str){ 
     $this->output_msg(Writer::$VERBOSE, $this->format($str));
   }
 
   /**  
+   * write debug message
    *
+   * @param string $str debug message.
    */
   public function debug($str){
     $this->output_msg(Writer::$DEBUG, $this->debug_format($str));
   }
 
   /**  
+   * write normal message
    *
+   * @param string $str message
    */
   public function puts($str){ 
     $this->output_msg(Writer::$NORMAL, $this->format($str));
   }
 
   /**
+   * write error message
    *
+   * @param string $str error message.
    */
   public function error($str){ 
     fprintf($this->err_output, $this->error_format($str) . "\n");
@@ -91,7 +107,11 @@ abstract class Writer{
 
 
   /**
+   * puts message if write level was higher than target level.
    *
+   * @access protected
+   * @param integer $target_level
+   * @param string  $msg
    */
   protected function output_msg($target_level, $msg){
     if($this->level >= $target_level){
@@ -101,25 +121,33 @@ abstract class Writer{
 
   //----------------------------------------
   /**
-   * format the output string in Writer::Debug Level.
+   * format output string for Writer::Debug Level.
+   *
+   * @access protected
+   * @param string $str debug message
+   * @return formatted debug message
    */
   protected function debug_format($str){
     return "DEBUG: " . $str;
   }
 
   /**
-   * format the output string.
+   * format output string.
    *
-   * @param $str formated string.
+   * @access protected
+   * @param string $str normal message
+   * @return formatted normal message
    */
   protected function format($str){
     return "*** " . $str;
   }
 
   /**
-   * format the error output string.
+   * format error output string.
    *
-   * @param $str formated string.
+   * @access protected
+   * @param string $str error message
+   * @return formatted error message
    */
   protected function error_format($str){
     return "ERROR: " . $str;
@@ -132,13 +160,13 @@ abstract class Writer{
  */
 class ConsoleWriter extends Writer{
 
-  /**  */
+  /** instance object */
   private static $instance = null;
 
   /**
    * Get ConsoleWriter Instance
+   * (Write output message to STDOUT/STDERR)
    *
-   * @param array $conf array('level' => Writer::XXXX)
    * @return ConsoleWriter Instance.
    */
   public static function getInstance(){
@@ -153,13 +181,17 @@ class ConsoleWriter extends Writer{
 
 /**
  * TaskList ConsoleWriter Class
+ *
+ * custom class for output tasklist message.(-t option)
  */
 class TaskListWriter extends ConsoleWriter{
-  /** this class value */
+  /** class instance */
   private static $instance = null;
 
   /**
-   * factory method
+   * instance getter factory method
+   *
+   * @return TaskListWriter Instance
    */
   public static function getInstance(){
     if(TaskListWriter::$instance == null){
@@ -170,9 +202,10 @@ class TaskListWriter extends ConsoleWriter{
   }
 
   /**  
-   * output task list 
+   * format and output task list message.
    *
    * @param array $ary ( ('name'=>$task_name, 'desc'=>$desc),....)
+   * @param string $pask_fpath paskfile directory.
    */
   public function puts_tasks($ary, $pask_fpath){ 
     $out = array( "(in ". $pask_fpath .")" );
@@ -181,10 +214,8 @@ class TaskListWriter extends ConsoleWriter{
     $longest_size = $this->get_longest_taskname_length($ary); 
     $format_string = "% -".$longest_size."s # %s";
 
-    // sort by strnatcmp in tasknames.
     $ordered_ary = $this->sort_output_tasks($ary);
 
-    // push output array
     foreach($ordered_ary as $task_data){
       array_push($out, 
         sprintf($format_string, $task_data['name'],$task_data['desc'])
@@ -199,12 +230,15 @@ class TaskListWriter extends ConsoleWriter{
 
 
   /**
-   *  get longest task_name
+   * get longest task_name
+   *
+   * @access private
+   * @param array $ary
+   * @return longest task_name length 
    */
   private function get_longest_taskname_length($ary){
     $task_names = $this->get_tasknames($ary);
 
-    // TODO if usort return false
     usort($task_names, create_function('$str1, $str2','
         $length_str1 = mb_strlen($str1);
         $length_str2 = mb_strlen($str2);
@@ -223,7 +257,11 @@ class TaskListWriter extends ConsoleWriter{
   }
 
   /**
+   * Get task_name array
    *
+   * @access private
+   * @param array $ary
+   * @return task_name strings array
    */
   private function get_tasknames($ary){
     $ret = array();
@@ -235,11 +273,14 @@ class TaskListWriter extends ConsoleWriter{
 
   /**
    * sort tasks in alphabetical order
+   *
+   * @access private
+   * @param array $ary
+   * @return sorted task object array
    */
   private function sort_output_tasks($ary){
     $target_ary = $ary;
 
-    // TODO if usort return false
     usort($target_ary, 
       create_function('$task_data1, $task_data2','
         return strnatcmp($task_data1["name"], $task_data2["name"]);
