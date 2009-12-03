@@ -34,6 +34,10 @@ class PaskRunner{
 
   /**
    * Constractor
+   *
+   * @param PaskLoader Instance $loader
+   * @param mixed $conf 
+   * @param Writer Instance $writer
    */
   public function __construct($loader, $conf, $writer){ 
     $this->loader = $loader;
@@ -44,12 +48,12 @@ class PaskRunner{
   }
 
   /**
-   * Do task 
+   * Do specified task 
+   *
+   * @param string $task_name 
+   * @param mixed $task_args
    */
   public function run_task($task_name, $task_args){ 
-    // split $task_name to namespace and camelCasedTaskName
-//    $ary = Utils::parse_taskname($task_name);
-
     try{
       $stack = $this->loader->create_taskstack($task_name); 
     }catch(Exception $err){

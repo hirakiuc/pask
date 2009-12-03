@@ -31,7 +31,7 @@ class Utils{
     $className = Utils::to_camelCased($paskfile_name); 
 
     $namespace = "";
-    // TODO resolve namespace problem... 
+    // FIXME issue #2 resolve namespace problem... 
 //    $namespace = implode($splited);
 
     return array(
@@ -73,9 +73,11 @@ class Utils{
 
   /**
    * calc microsec time diff and return formated string
+   *
+   * @param microtime $start_time
+   * return formatted msec time string.
    */
   public static function get_process_time($start_time){
-    // calc msec time diff.
     $diff = round(microtime(TRUE) - $start_time); 
     return sprintf("%0.2f",$diff);
   }
