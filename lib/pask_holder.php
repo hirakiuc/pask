@@ -132,8 +132,6 @@ class PaskHolder
     $tree = $this->build_tasktree($taskname);
 
     $ary = $tree->to_a();
-    echo "tree->to_a()";
-    var_dump($ary);
 
     $ret = array();
     foreach($ary as $v){
