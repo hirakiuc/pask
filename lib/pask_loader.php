@@ -12,9 +12,8 @@
  * @version Git:$Id$
  */
 
-require_once("utils.php");
+require_once("const.php");
 require_once("errors.php");
-require_once("pask.php");
 
 /**
  * Paskfile Loader Class
@@ -30,62 +29,53 @@ class PaskLoader{
   /** target directory to search some paskfiles. */
   private $root_dir_path = null;
 
-  /** 
-   * create to search the task file.
-   *
-   * task_name is a CamelCasedName string 
-   * with namespace separated by ':'
-   *
-   * ( (task_name => filepath), ... )
-   */
-  private $paskfile_map = array();
-
-  /** 
-   * This array is used by TaskRunner Class as Stack.
-   *
-   * (
-   *   ( 
-   *     task_name => $camelCasedName , 
-   *     pask      => $obj, 
-   *     namespace => $str
-   *   ),
-   *    ....
-   * ) 
-   */
-  private $task_stack = array();
-
   /**
    * Constractor
    *
-   * @param string $taskdir_path
    * @param object $writer 
    */
-  public function __construct($taskdir_path, $writer){
-    $this->writer = $writer;
+  public function __construct($writer){
+    $this->writer = $writer; 
+  }  
 
-    // check taskdir_path is not null or zero length string.
-    if($taskdir_path == null || mb_strlen($taskdir_path) == 0){
+  /**
+   * load paskfiles.
+   *
+   * @param string $paskfile_path
+   * @param string $paskdir_path
+   */ 
+  public function load($paskfile_path, $paskdir_path){
+
+    if($paskfile_path != null && mb_strlen($paskfile_path) != 0) {
+      $this->loadfile($paskfile_path);
+    }
+
+    // check paskdir_path is not null or zero length string.
+    if($paskdir_path == null){
+      return;
+    }
+
+    if(mb_strlen($paskdir_path) == 0){
       throw new ArgumentError("Invalid Argument : Task Directory Path.");
     }
 
-    // check whether taskdir_path is a dir?
-    if(!file_exists($taskdir_path)){
-      throw new NotFoundError("Invalid Directory path: " . $taskdir_path);
-    }else if(!is_dir($taskdir_path)){
-      throw new NotDirectoryError("Invalid Directory path: " . $taskdir_path);
+    // check whether paskdir_path is a dir?
+    if(!file_exists($paskdir_path)){
+      throw new NotFoundError("Invalid Directory path: " . $paskdir_path);
+    }else if(!is_dir($paskdir_path)){
+      throw new NotDirectoryError("Invalid Directory path: " . $paskdir_path);
     }
 
-    $this->root_dir_path = $taskdir_path;
+    $this->root_dir_path = $paskdir_path;
 
     try{
-      $root_dir = new DirectoryIterator($taskdir_path);
+      $root_dir = new DirectoryIterator($paskdir_path);
 
       $this->search_paskfiles($root_dir); 
-
     }catch(Exception $err){
       throw $err;
     } 
-  }  
+  }
 
   /**
    * Search paskfile in the taskdir recursively.
@@ -95,291 +85,87 @@ class PaskLoader{
    */
   private function search_paskfiles($dir_iterator){
     try{
-      foreach($dir_iterator as $file){
-        $fname = $file->getFilename();
-        $fpath = $file->getPathname();
+      foreach($dir_iterator as $item){
+        $name = $item->getFilename();
+        $path = $item->getPathname();
 
-        if($file->isDir() || $file->isDot()){
-//          $next_dir = new DirectoryIterator($file->getPathname());
-//          $this->search_paskfiles($next_dir); 
-          $this->writer->debug("Dir Skipped : " . $fpath);
+        if($item->isDir() && !$item->isDot()){
+          $next_dir = new DirectoryIterator($item->getPathname());
+          $this->search_paskfiles($next_dir); 
+          $this->writer->debug("Search into Directory: " . $path);
 
-        }else if($file->isFile()){
-          $this->writer->debug("File found.");
-          if(mb_ereg_match($this->task_ext_regexp,$fpath)){
+        }else if($item->isFile()){
+          $this->writer->debug("File found:".$path);
+          if($item->isReadable()){
+            if(mb_ereg_match($this->task_ext_regexp, $path) || $name == DEFAULT_PASKFILE){ 
 
-            $taskname = $this->get_taskname($fpath); 
+              $this->loadfile($path);
 
-            $this->paskfile_map[$taskname] = $fpath; 
-
-            $this->writer->debug("File loaded : " . $fpath);
-          }else{
-            $this->writer->debug("File Skipped: " . $fpath);
+              $this->writer->debug("File loaded : " . $path);
+            }else{
+              $this->writer->debug("File Skipped: " . $path);
+            } 
+          } else {
+            $this->writer->debug("File can't readable... skip.");
           }
-
         }else{
-          $this->writer->debug("File Skipped: " . $fpath);
+          $this->writer->debug("File Skipped: " . $path);
         }
       }
     }catch(Exception $err){
       throw $err;
     } 
-  }
+  } 
 
-
-  //--------------------------------------------
-  // pask stack
   /**
-   * Create TaskStack in this instance.
-   *  
-   * @param string $task_name namespaced task_name
-   * @return task_stack
+   * load a paskfile.
+   *
+   * @param string @path filepath
    */
-  public function create_taskstack($task_name){
+  private function loadfile($path){
 
-    $task_data = $this->load_paskfile($task_name); 
-
-    $before_tasks = $task_data['pask']->before_tasks;
-
-    if($before_tasks != null && count($before_tasks) > 0){
-      $this->resolve_dependency($before_tasks);
+    $is_default_file = false;
+    if (preg_match("/".DEFAULT_PASKFILE . "$/", $path)) {
+      $is_default_file = true;
     }
 
-    $this->push_task($task_data);
-
-    // need to reverse taskarray. (because of sorting order by task order.)
-    $this->task_stack = array_reverse($this->task_stack);
-
-    return $this->task_stack;
-  }
-
-  /**
-   * Check whether specified task depends on any other tasks.
-   * if such tasks exists, put in task stack.
-   *
-   * @param array a array with task_name strings
-   */ 
-  private function resolve_dependency($before_tasks){ 
-    foreach($before_tasks as $task_name){
-      $task_data = $this->load_paskfile($task_name);
-      $before_tasks = $task_data['pask']->before_tasks;
-
-      if(count($before_tasks) > 0){
-        $this->resolve_dependency($before_tasks);
-      }else{ 
-        $this->push_task($task_data);
+    if(!file_exists($path)){
+      if (!$is_default_file){
+        throw new FileReadError("file not found: " . $path);
+      } else {
+        return;
       }
     }
-  }
 
-  /**
-   * Load a Specified paskfile by namespaced task_name, 
-   * and return a array for task stask.
-   *
-   * @access private
-   * @param mixed $task_name string namespaced task_name
-   * @return a array for task stask.
-   */
-  private function load_paskfile($task_name){ 
-
-    // resolve paskfile path from task_name.
-    $fpath = $this->paskfile_map[$task_name];
-    if($fpath == null){
-      throw new TaskNotFoundError("target taskfile is not exist: " . $fpath);
-    }
-
-    // FIXME issue 2 (namespace problem)
-    //   this spec may be redefine(or error occur?)  TaskClass 
-    //   if other same TaskNameClass exist in other namespace.
-    //   (should this use php namespace in 5.3 ??) 
-    include_once($fpath);
-
-    $obj = null;
-    try{
-      $task_classname = $this->get_classname($task_name);
-      if(!class_exists($task_classname)){
-        throw new TaskNotFoundError("target task is not defined: " . $task_name);
+    if (!is_file($path) || !is_readable($path)){ 
+      if (!$is_default_file){ 
+        throw new FileReadError("not readable file: " . $path);
+      } else {
+        return;
       }
-
-      $ref = new ReflectionClass($task_classname);
-      if(!$ref->isSubclassOf("Pask")){
-        throw new InvalidTaskClassError(
-          $task_classname . " class is not a SubClass of the Pake Class.");
-      }
-
-      $obj = $ref->newInstance(); 
-
-      $this->check_taskclass_values($task_classname, $obj);
-
-    }catch(Exception $err){
-      throw $err;
     }
 
-    return array(
-      'task_name' => $task_name, 
-      'pask' => $obj,
-      'namespace' => $this->get_namespace($task_name)
-    );
+    include_once($path);
   }
 
   /**
-   * check taskclass (throw exception if failed)
    *
-   * @access private
-   * @param string $task_classname
-   * @param mixed $obj Instantiated Task Class
    */
-  private function check_taskclass_values($task_classname, $obj){
-    // desc variable type check
-    if(!is_string($obj->desc)){
-      throw new InvalidTaskClassError(
-        $task_classname . " class must have a 'desc' string instance value.");
+  public function show_tasklist(){
+
+    $holder = PaskHolder::getInstance();
+    $tasks = $holder->get_all_tasks();
+
+    $descs = array();
+    foreach($tasks as $task) {
+      array_push($descs, 
+        array('name' => $task['name'], 'desc' => $task['desc'])
+      );
     }
 
-    if($obj->before_tasks != null){
-      if(!is_array($obj->before_tasks)){
-        throw new InvalidTaskClassError(
-          $task_classname
-          ." class must have a 'before_tasks' array instance value."
-        );
-      }
-      
-      $keys = array_keys($obj->before_tasks);
-      foreach($keys as $key){
-        if(!is_int($key)){
-          throw new InvalidTaskClassError(
-            "'before_tasks' in the "
-            .$task_classname 
-            ." class instance must a simple strings array."
-          );
-        }
-      }
-
-      $values = array_values($obj->before_tasks);
-      foreach($values as $value){
-        if(!is_string($value)){
-          throw new InvalidTaskClassError(
-            "'before_tasks' in the "
-            .$task_classname 
-            ." class instance must a simple strings array."
-          );
-        }
-      } 
-    } 
+    $writer = TaskListWriter::getInstance();
+    $writer->puts_tasks($descs);
   }
-
-  //--------------------------------------------
-  /**
-   * load all defined tasks and create a array.
-   * 
-   * @return array which has all task's name and desc.
-   */
-  public function get_tasks_desc(){
-    // [ { 'task_name' => $taskname, 'desc' => $desc'}, ....] 
-    $defined_tasks = array(); 
-
-    $paskfile_fpaths = array_keys($this->paskfile_map);
-
-    foreach($paskfile_fpaths as $fpath){ 
-      try{ 
-        $task_data = $this->load_paskfile($fpath); 
-
-        array_push($defined_tasks, array( 
-          'name' => $task_data['task_name'],
-          'desc' => $task_data['pask']->desc
-        ));
-        
-      }catch(Exception $err){
-        throw $err;
-      } 
-    }
-    return $defined_tasks;
-  }
-
-  //--------------------------------------------
-  /**
-   * get a array mapped task_name and paskfile path.
-   *
-   * @return paskfile_map
-   */
-  public function get_paskfile_map(){
-    return $this->paskfile_map;
-  }
-
-  //--------------------------------------------
-  // Util functions
-  //
-
-  /**
-   * create namespaced task_name from paskfile path.
-   *
-   * @access private
-   * @param string $file_path paskfile fullpath
-   * @return namespaced taskname string
-   */
-  private function get_taskname($file_path){
-    $paskfile_name = basename($file_path, ".pask.php"); 
-
-    // root namespace
-    $namespace = "";
-
-    // delete paskdir path prefix from path.
-    $path_from_rootdir = substr($fiel_path, mb_strlen($this->root_dir_path));
-
-    if(mb_strlen($path_from_rootdir) != 0){ 
-      // replace directory separator by ':'
-      $namespace = preg_replace("/\//",":",substr($path_from_root_dir,1)); 
-    } 
-
-    if(mb_strlen($namespace) == 0){
-      return $paskfile_name;
-    }else{
-      return $namespace . ":" . $paskfile_name;
-    }
-  }
-
-
-  /**
-   * get ClassName from namespaced task_name.
-   *
-   * @access private
-   * @param string $task_name namespaced task_name
-   * @return ClassName
-   */
-  private function get_classname($task_name){ 
-    $ary = Utils::parse_taskname($task_name);
-    return $ary['className'];
-  }
-
-  /**
-   * get namespace from namespaced task_name.
-   *
-   * @access private
-   * @param string $task_name namespaced task_name
-   * @return namespace(separated by ':') or ""(root namespace)
-   */
-  private function get_namespace($task_name){
-    $ary = Utils::parse_taskname($task_name);
-    return $ary['namespace']; 
-  }
-
-  //--------------------------------------------
-  /**
-   * push a specified array object into the task stack.
-   *
-   * @access private
-   * @param array $task_data a array contain the task stack object.
-   */
-  private function push_task($task_data){
-    array_push($this->task_stack, $task_data);
-  }
-
-  /**
-   * pop the next task stack object from task stack.
-   */
-  public function pop_task(){
-    array_pop($this->task_stack);
-  }
-
 } 
+
 ?>

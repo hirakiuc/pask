@@ -205,18 +205,20 @@ class TaskListWriter extends ConsoleWriter{
    * format and output task list message.
    *
    * @param array $ary ( ('name'=>$task_name, 'desc'=>$desc),....)
-   * @param string $pask_fpath paskfile directory.
    */
-  public function puts_tasks($ary, $pask_fpath){ 
-    $out = array( "(in ". $pask_fpath .")" );
+  public function puts_tasks($ary){ 
+    
+    if(count($ary) == 0) {
+      $this->output_msg(Writer::$NORMAL, "No task found.");
+      return;
+    }
 
     // Create task output format.
     $longest_size = $this->get_longest_taskname_length($ary); 
     $format_string = "% -".$longest_size."s # %s";
 
-    $ordered_ary = $this->sort_output_tasks($ary);
-
-    foreach($ordered_ary as $task_data){
+    $out = array();
+    foreach($ary as $task_data){
       array_push($out, 
         sprintf($format_string, $task_data['name'],$task_data['desc'])
       ); 
@@ -239,7 +241,7 @@ class TaskListWriter extends ConsoleWriter{
   private function get_longest_taskname_length($ary){
     $task_names = $this->get_tasknames($ary);
 
-    usort($task_names, create_function('$str1, $str2','
+    usort($task_names, function($str1, $str2){
         $length_str1 = mb_strlen($str1);
         $length_str2 = mb_strlen($str2);
 
@@ -250,8 +252,7 @@ class TaskListWriter extends ConsoleWriter{
         }else{
           return -1;
         } 
-      ')
-    );
+    });
 
     return mb_strlen(array_pop($task_names));
   }
@@ -269,27 +270,7 @@ class TaskListWriter extends ConsoleWriter{
       array_push($ret, $task['name']);
     }
     return $ret;
-  }
-
-  /**
-   * sort tasks in alphabetical order
-   *
-   * @access private
-   * @param array $ary
-   * @return sorted task object array
-   */
-  private function sort_output_tasks($ary){
-    $target_ary = $ary;
-
-    usort($target_ary, 
-      create_function('$task_data1, $task_data2','
-        return strnatcmp($task_data1["name"], $task_data2["name"]);
-      ')
-    );
-
-    return $target_ary; 
-  }
-
+  } 
 }
 
 

@@ -2,7 +2,7 @@
 /* vim: set expandtab tabstop=2 shiftwidth=2 softtabstop=2: */
 
 /**
- * Task Runner Class
+ * Pask Runner Class
  *
  * PHP version 5
  *
@@ -12,16 +12,12 @@
  * @version Git:$Id$
  */
 
-require_once('pask.php');
-require_once('pask_loader.php');
+require_once('pask_holder.php');
 
 /**
- * TaskRunner for paskfile.
+ * PaskRunner for paskfile.
  */
 class PaskRunner{
-
-  /** paskfile loader instance */
-  private $loader = null;
 
   /** system config */
   private $conf = null;
@@ -29,22 +25,15 @@ class PaskRunner{
   /** output writer */
   private $writer = null;
 
-  /** map taskname with filepath */
-  private $paskfile_map = null;
-
   /**
    * Constractor
    *
-   * @param PaskLoader Instance $loader
    * @param mixed $conf 
    * @param Writer Instance $writer
    */
-  public function __construct($loader, $conf, $writer){ 
-    $this->loader = $loader;
+  public function __construct($conf, $writer){ 
     $this->conf = $conf;
     $this->writer = $writer; 
-
-    $this->paskfile_map = $loader->get_paskfile_map();
   }
 
   /**
@@ -55,7 +44,8 @@ class PaskRunner{
    */
   public function run_task($task_name, $task_args){ 
     try{
-      $stack = $this->loader->create_taskstack($task_name); 
+      $holder = PaskHolder::getInstance();
+      $stack = $holder->create_taskstack($task_name); 
     }catch(Exception $err){
       throw $err;
     }
@@ -65,16 +55,16 @@ class PaskRunner{
 
     while(count($stack)!=0){
       try{ 
-        $task_data = array_pop($stack); 
+        $task_data = array_shift($stack); 
 
-        $this->writer->verbose("Start '".$task_data['task_name']);
+        $this->writer->verbose("Start '".$task_data['name']);
         $start_time = Utils::get_time();
 
-        $task_data['pask']->run();
+        $task_data['callback']();
 
         $process_time = Utils::get_process_time($start_time);
         $this->writer->verbose(
-          "End   '".$task_data['task_name']."(".$process_time."[msec])");
+          "End   '".$task_data['name']."(".$process_time."[msec])");
 
       }catch(Exception $err){
         throw $err;

@@ -13,6 +13,7 @@
  */
 
 require_once('Console/CommandLine.php');
+require_once('const.php');
 
 /**
  * The Class for Simple use for Command Line Interface
@@ -37,9 +38,6 @@ class Application{
 
   /** config value array */
   public $conf = null;
-
-  /** PaskRunner instance */
-  private $runner = null;
 
   /** PaskLoader instance */
   private $loader = null;
@@ -71,24 +69,24 @@ class Application{
       exit(Application::$ERROR);
     }
 
-    // create Loader and Runner instance
     $writer = $this->get_writer();
 
+    $loader = new PaskLoader($writer);
+
     try{ 
-      $this->loader = new PaskLoader($this->conf->options['paskdir'], $writer); 
+      $loader->load($this->conf->options['paskfile'], $this->conf->options['paskdir']);
     }catch(Exception $err){
-      // error occured  searching paskfile
       $writer->error($err->getMessage());
       exit(Application::$ERROR);
     }
     
-    $this->runner = new PaskRunner($this->loader, $this->conf, $writer); 
-
     if($this->conf->options['tasks']){
-       $this->show_tasklist();
+      $loader->show_tasklist();
     }else{
       try{
-        $this->run_task($this->conf->args['taskname'] ,null);
+        $runner = new PaskRunner($this->conf, $writer); 
+
+        $runner->run_task($this->conf->args['taskname'], null);
       }catch(Exception $err){
         $writer->error($err->getMessage());
         exit(Application::$ERROR);
@@ -126,7 +124,6 @@ class Application{
   private function get_writer(){
     $writer = ConsoleWriter::getInstance();
     $writer->set_level($this->get_writer_level());
-    // create and return writer
     return $writer;
   }
 
@@ -202,7 +199,16 @@ class Application{
       'description'=> 'specify paskfile directory.',
       'help_name'  => 'PASKDIR',
       'action'     => 'StoreString',
-      'default'    => '../sample'
+      'default'    => getcwd()
+    ));
+
+    $parser->addOption('paskfile', array(
+      'short_name' => '-f',
+      'long_name'  => '--paskfile',
+      'description'=> 'specify paskfile.',
+      'help_name'  => 'PASKFILE',
+      'action'     => 'StoreString',
+      'default'    => getcwd() . PATH_SEPARATOR . DEFAULT_PASKFILE
     )); 
 
     $parser->addOption('verbose', array(
@@ -252,35 +258,5 @@ class Application{
 
     return $parser;
   } 
-
-  //------------------------------------------
-  /**
-   * Run task.
-   */
-  private function run_task($task_name, $task_args){
-    try{ 
-      $this->runner->run_task($task_name, $task_args);
-    }catch(Exception $err){
-      throw $err;
-    }
-  }
-
-  /**
-   * show defined tasks.
-   */
-  private function show_tasklist(){
-    try{ 
-      $ary = $this->loader->get_tasks_desc();
-
-      $task_writer = TaskListWriter::getInstance();
-      $task_writer->set_level($this->get_writer_level());
-
-      $task_writer->puts_tasks($ary, $this->conf->options['paskdir']); 
-    }catch(Exception $err){
-      $this->writer->error($err->getMessage());
-      return Application::$ERROR;
-    }
-  }
-
 } 
 ?>

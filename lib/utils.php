@@ -18,31 +18,6 @@
 class Utils{
 
   /**
-   * parse task_name to paskfile name, namespace and CamelCased className.
-   *
-   * @param string $task_name taskname with namespace.(not normalized)
-   * @return array
-   */
-  public static function parse_taskname($task_name){
-    $splited = explode(":",$task_name);
-
-    $paskfile_name  = array_pop($splited);
-
-    $className = Utils::to_camelCased($paskfile_name); 
-
-    $namespace = "";
-    // FIXME issue #2 resolve namespace problem... 
-//    $namespace = implode($splited);
-
-    return array(
-      'paskfile_name' => $paskfile_name,
-      'task_name'     => $task_name,     // namespace:paskfile_name
-      'namespace'     => $namespace,     // namespace separated by ':'
-      'className'     => $className      // task class name
-    );
-  }
-
-  /**
    * return camelCasedString.
    *
    * @param string $str target string to change a camelCased one.

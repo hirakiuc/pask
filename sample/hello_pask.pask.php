@@ -1,18 +1,11 @@
 <?php
 /**
- *
+ * hello pask task.
  */
 
-require_once(dirname(__FILE__)."/../lib/include.php");
+desc("hello pask!");
+task("hello_pask", function(){
+  echo "Hello Pask !\n";
+});
 
-class HelloPask extends Pask{
-
-  public $desc = "Hello Pask!";
-
-  public $before_tasks = array("hello_world_task");
-
-  public function run(){
-    echo "Hello Pask !\n"; 
-  }
-} 
 ?>

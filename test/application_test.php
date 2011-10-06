@@ -11,7 +11,6 @@ require_once(dirname(__FILE__)."/../lib/include.php");
  * @license http://www.opensource.org/licenses/mit-license.html  MIT License
  * @version Git:$Id$
  */
-require_once('PHPUnit/Framework.php');
 
 class ApplicationTest extends PHPUnit_Framework_TestCase{
 
