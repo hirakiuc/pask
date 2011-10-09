@@ -241,7 +241,6 @@ class TaskNode
    */
   private static function to_a_children($node) {
     if (count($node->children) == 0) {
-      echo "childnode:".$node->name."\n";
       return array($node->name);
     }
 
